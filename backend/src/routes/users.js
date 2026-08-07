@@ -1,9 +1,13 @@
 import { Router } from "express";
-import { getMe, updateMe } from "../controllers/users.js";
+import { getMe, getUserByUsername, updateMe } from "../controllers/users.js";
 import { authenticate } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { upload } from "../middleware/upload.js";
-import { updateProfileSchema } from "../schemas/auth.js";
+import {
+  getUserByUsernameParamsSchema,
+  paginationQuerySchema,
+  updateProfileSchema,
+} from "../schemas/users.js";
 
 const router = Router();
 
@@ -12,8 +16,16 @@ router.patch(
   "/me",
   authenticate,
   upload.single("avatar"), // Process multipart file first
-  validate(updateProfileSchema), // Validate req.body with Zod
+  validate({ body: updateProfileSchema }), // Validate req.body with Zod
   updateMe, // Update database
+);
+router.get(
+  "/:username",
+  validate({
+    params: getUserByUsernameParamsSchema,
+    query: paginationQuerySchema,
+  }),
+  getUserByUsername,
 );
 
 export default router;

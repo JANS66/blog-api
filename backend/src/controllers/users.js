@@ -90,3 +90,81 @@ export const updateMe = async (req, res) => {
     return res.status(500).json({ error: "Server error updating profile." });
   }
 };
+
+/**
+ * GET /api/v1/users/:username
+ * Public route to fetch a users public profile and their published posts.
+ */
+export const getUserByUsername = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    // Defensive fallbacks to ensure skip and limit are never NaN or undefined
+    const page = Math.max(1, parseInt(req.query?.page, 10) || 1);
+    const limit = Math.max(
+      1,
+      Math.min(100, parseInt(req.query?.limit, 10) || 10),
+    );
+    const skip = (page - 1) * limit;
+
+    // Fetch user and their PUBLISHED posts count and list
+    const user = await prisma.user.findUnique({
+      where: { username },
+      select: {
+        id: true,
+        username: true,
+        bio: true,
+        avatarUrl: true,
+        createdAt: true,
+        posts: {
+          where: { status: "PUBLISHED" }, // Only public posts
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            excerpt: true,
+            coverImage: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Get total published post count for pagination metadata
+    const totalPosts = await prisma.post.count({
+      where: {
+        authorId: user.id,
+        status: "PUBLISHED",
+      },
+    });
+
+    return res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        bio: user.bio,
+        avatarUrl: user.avatarUrl,
+        createdAt: user.createdAt,
+      },
+      posts: user.posts,
+      pagination: {
+        totalPosts,
+        page,
+        limit,
+        totalPages: Math.ceil(totalPosts / limit),
+      },
+    });
+  } catch (err) {
+    console.error("Get User Profile Error:", err);
+    return res
+      .status(500)
+      .json({ error: "Server error fetching user profile." });
+  }
+};
