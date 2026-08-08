@@ -1,9 +1,15 @@
 import { Router } from "express";
-import { getMe, getUserByUsername, updateMe } from "../controllers/users.js";
-import { authenticate } from "../middleware/auth.js";
+import {
+  deleteUser,
+  getMe,
+  getUserByUsername,
+  updateMe,
+} from "../controllers/users.js";
+import { authenticate, authorize } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { upload } from "../middleware/upload.js";
 import {
+  deleteUserParamsSchema,
   getUserByUsernameParamsSchema,
   paginationQuerySchema,
   updateProfileSchema,
@@ -26,6 +32,13 @@ router.get(
     query: paginationQuerySchema,
   }),
   getUserByUsername,
+);
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("ADMIN"),
+  validate({ params: deleteUserParamsSchema }),
+  deleteUser,
 );
 
 export default router;

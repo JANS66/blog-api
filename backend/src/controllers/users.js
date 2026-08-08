@@ -168,3 +168,42 @@ export const getUserByUsername = async (req, res) => {
       .json({ error: "Server error fetching user profile." });
   }
 };
+
+/**
+ * DELETE /api/v1/users/:id
+ * Admin only - Hard delete user account
+ */
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent Admin from deleting themselves
+    if (id === req.user.id) {
+      return res
+        .status(400)
+        .json({ error: "You cannot delete your own admin account." });
+    }
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, username: true },
+    });
+
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Hard delete user from PostgreSQL
+    await prisma.user.delete({
+      where: { id },
+    });
+
+    return res.json({
+      message: `User "${existingUser.username}" hard deleted successfully.`,
+    });
+  } catch (err) {
+    console.error("Delete User Error:", err);
+    return res.status(500).json({ error: "Server error deleting user." });
+  }
+};
