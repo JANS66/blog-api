@@ -2,23 +2,19 @@ export const validate =
   ({ body, params, query }) =>
   (req, res, next) => {
     try {
-      // Validate Params if schema provided
+      // Initialize container for sanitized inputs
+      req.valid = {};
+
       if (params) {
-        const parsedParams = params.parse(req.params || {});
-        Object.assign(req.params, parsedParams);
+        req.valid.params = params.parse(req.params || {});
       }
 
-      // Validate Query if schema provided
       if (query) {
-        const parsedQuery = query.parse(req.query || {});
-        // Clear old raw string values and assign coerced numbers/defaults
-        Object.keys(req.query).forEach((key) => delete req.query[key]);
-        Object.assign(req.query, parsedQuery);
+        req.valid.query = query.parse(req.query || {});
       }
 
-      // Validate Body if schema provided
       if (body) {
-        req.body = body.parse(req.body || {});
+        req.valid.body = body.parse(req.body || {});
       }
 
       next();

@@ -7,8 +7,7 @@ import { generateToken, setAuthCookie, clearAuthCookie } from "../utils/jwt.js";
  */
 export const register = async (req, res) => {
   try {
-    // req.body is already sanitized and validated by Zod
-    const { email, username, password } = req.body;
+    const { email, username, password } = req.valid.body;
 
     // Check if email or username is taken
     const existingUser = await prisma.user.findFirst({
@@ -62,7 +61,7 @@ export const register = async (req, res) => {
  */
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.valid.body;
 
     const user = await prisma.user.findUnique({ where: { email } });
 

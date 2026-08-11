@@ -34,7 +34,7 @@ export const getMe = async (req, res) => {
  */
 export const updateMe = async (req, res) => {
   try {
-    const { username, bio } = req.body;
+    const { username, bio } = req.valid.body;
     let newAvatarUrl;
 
     // If an image file was attached in form-data ("avatar")
@@ -97,14 +97,9 @@ export const updateMe = async (req, res) => {
  */
 export const getUserByUsername = async (req, res) => {
   try {
-    const { username } = req.params;
+    const { username } = req.valid.params;
 
-    // Defensive fallbacks to ensure skip and limit are never NaN or undefined
-    const page = Math.max(1, parseInt(req.query?.page, 10) || 1);
-    const limit = Math.max(
-      1,
-      Math.min(100, parseInt(req.query?.limit, 10) || 10),
-    );
+    const { page, limit } = req.valid.query;
     const skip = (page - 1) * limit;
 
     // Fetch user and their PUBLISHED posts count and list
@@ -175,7 +170,7 @@ export const getUserByUsername = async (req, res) => {
  */
 export const deleteUser = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.valid.params;
 
     // Prevent Admin from deleting themselves
     if (id === req.user.id) {
