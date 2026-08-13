@@ -262,3 +262,153 @@ export const createPost = async (req, res) => {
     return res.status(500).json({ error: "Server error creating post." });
   }
 };
+
+/**
+ * PATCH /api/v1/posts/:id
+ * Author (Owner) / Admin - Update post details
+ */
+export const updatePost = async (req, res) => {
+  try {
+    const { id } = req.valid.params;
+    const { title, content, excerpt, status, categoryId, tags } =
+      req.valid.body;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Short circuit: Check empty updates BEFORE making any DB queries
+    if (
+      title === undefined &&
+      content === undefined &&
+      excerpt === undefined &&
+      status === undefined &&
+      categoryId === undefined &&
+      tags === undefined &&
+      !req.file
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Please provide at least one field to update." });
+    }
+
+    // Fetch existing post for ownership and status checks
+    const existingPost = await prisma.post.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        authorId: true,
+        title: true,
+        status: true,
+        publishedAt: true,
+      },
+    });
+
+    if (!existingPost) {
+      return res.status(404).json({ error: "Post not found." });
+    }
+
+    // Authorization check: Must be owner or ADMIN
+    if (existingPost.authorId !== userId && userRole !== "ADMIN") {
+      return res.status(403).json({
+        error: "Access denied. You can only update your own posts.",
+      });
+    }
+
+    // Handle Title and Slug regeneration
+    let newSlug;
+    if (title && title !== existingPost.title) {
+      newSlug = await createUniqueSlug(title);
+    }
+
+    // Handle Cover Image upload to Cloudinary
+    let coverImageUrl;
+    if (req.file) {
+      coverImageUrl = await uploadToCloudinary(
+        req.file.buffer,
+        "blog-api/posts",
+      );
+    }
+
+    // Handle Category validation
+    if (categoryId) {
+      const categoryExists = await prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+      if (!categoryExists) {
+        return res
+          .status(400)
+          .json({ error: "Selected category does not exist." });
+      }
+    }
+
+    // Handle Tag update (removes old tag associations and connects/creates new ones)
+    let tagsUpdate;
+    if (tags !== undefined) {
+      const tagConnectOrCreate = tags.map((tagName) => {
+        const tagSlug = slugify(tagName, {
+          lower: true,
+          strict: true,
+          trim: true,
+        });
+        return {
+          where: { slug: tagSlug },
+          create: { name: tagName, slug: tagSlug },
+        };
+      });
+
+      tagsUpdate = {
+        set: [], // Disconnect previous tags
+        connectOrCreate: tagConnectOrCreate,
+      };
+    }
+
+    // Determine publishedAt timestamp handling
+    let publishedAtUpdate;
+    if (status === "PUBLISHED" && !existingPost.publishedAt) {
+      publishedAtUpdate = new Date();
+    }
+
+    // Execute Post Update
+    const updatedPost = await prisma.post.update({
+      where: { id },
+      data: {
+        ...(title !== undefined && { title }),
+        ...(newSlug && { slug: newSlug }),
+        ...(content !== undefined && { content }),
+        ...(excerpt !== undefined && { excerpt }),
+        ...(coverImageUrl && { coverImage: coverImageUrl }),
+        ...(status !== undefined && { status }),
+        ...(publishedAtUpdate && { publishedAt: publishedAtUpdate }),
+        ...(categoryId !== undefined && { categoryId }),
+        ...(tagsUpdate && { tags: tagsUpdate }),
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        content: true,
+        coverImage: true,
+        status: true,
+        publishedAt: true,
+        updatedAt: true,
+        author: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
+        category: {
+          select: { id: true, name: true, slug: true },
+        },
+        tags: {
+          select: { id: true, name: true, slug: true },
+        },
+      },
+    });
+
+    return res.json({
+      message: "Post updated successfully.",
+      post: updatePost,
+    });
+  } catch (err) {
+    console.error("Update Post Error:", err);
+    return res.status(500).json({ error: "Server error updating post." });
+  }
+};
