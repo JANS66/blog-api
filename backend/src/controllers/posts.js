@@ -95,3 +95,72 @@ export const getPosts = async (req, res) => {
     return res.status(500).json({ error: "Server error fetching posts." });
   }
 };
+
+/**
+ * GET /api/v1/posts/:slug
+ * Public route - Get full post details by slug and increment viewsCount
+ */
+export const getPostBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    // Check if post exists and is published
+    const existingPost = await prisma.post.findUnique({
+      where: { slug },
+      select: { id: true, status: true },
+    });
+
+    if (!existingPost || existingPost.status !== "PUBLISHED") {
+      return res.status(404).json({ error: "Post not found." });
+    }
+
+    // Increment view count and fetch full post details in an atomic update
+    const post = await prisma.post.update({
+      where: { id: existingPost.id },
+      data: {
+        viewsCount: { increment: 1 },
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        content: true,
+        coverImage: true,
+        viewsCount: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+            bio: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        tags: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    return res.json({ post });
+  } catch (err) {
+    console.error("Get Post By Slug Error:", err);
+    return res
+      .status(500)
+      .json({ error: "Server error fetching post details." });
+  }
+};

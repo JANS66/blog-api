@@ -18,3 +18,10 @@ export const getPostsQuerySchema = z.object({
   tag: z.string().trim().optional(),
   search: z.string().trim().optional(),
 });
+
+export const getPostBySlugParamsSchema = z.object({
+  slug: z
+    .string({ required_error: "Post slug is required" })
+    .min(1, "Slug cannot be empty")
+    .trim(),
+});
