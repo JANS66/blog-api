@@ -52,6 +52,13 @@ export const register = async (req, res) => {
     });
   } catch (err) {
     console.error("Register Error:", err);
+
+    if (err.code === "P2002") {
+      return res
+        .status(409)
+        .json({ error: "Email or username already taken." });
+    }
+
     return res.status(500).json({ error: "Server error during registration." });
   }
 };

@@ -36,10 +36,12 @@ export const getMe = async (req, res) => {
  * Handles both text fields (username, bio) and optional file upload (avatar)
  */
 export const updateMe = async (req, res) => {
+  let newUploadedPublicId = null;
+
   try {
     const { username, bio } = req.valid.body;
 
-    // 1. Short circuit: Check empty updates BEFORE any async I/O or DB calls
+    // Short circuit: Check empty updates BEFORE any async I/O or DB calls
     if (username === undefined && bio === undefined && !req.file) {
       return res
         .status(400)
@@ -56,37 +58,33 @@ export const updateMe = async (req, res) => {
       }
     }
 
+    // Fetch current user data needed for image management
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { avatarPublicId: true },
+    });
+
     // Handle Avatar File Upload and Cloudinary Cleanup
     let newAvatarUrl;
     let newAvatarPublicId;
 
+    // Upload NEW file first if present
     if (req.file) {
-      // Fetch users current avatarPublicId from DB
-      const currentUser = await prisma.user.findUnique({
-        where: { id: req.user.id },
-        select: { avatarPublicId: true },
-      });
-
-      // Delete old avatar from Cloudinary if it exists
-      if (currentUser?.avatarPublicId) {
-        await deleteFromCloudinary(currentUser.avatarPublicId);
-      }
-
-      // Upload new avatar to Cloudinary
       const uploadResult = await uploadToCloudinary(
         req.file.buffer,
         "blog-api/avatars",
       );
-
       newAvatarUrl = uploadResult.url;
       newAvatarPublicId = uploadResult.publicId;
+      newUploadedPublicId = uploadResult.publicId; // Tracked for cleanup if DB fails
     }
 
     // Update Database
     const updatedUser = await prisma.user.update({
       where: { id: req.user.id },
       data: {
-        ...(username !== undefined && { username }),
+        ...(username !== undefined &&
+          username !== req.user.username && { username }),
         ...(bio !== undefined && { bio }),
         ...(newAvatarUrl && {
           avatarUrl: newAvatarUrl,
@@ -105,11 +103,30 @@ export const updateMe = async (req, res) => {
       },
     });
 
+    // Delete OLD asset ONLY AFTER DB update succeeds
+    if (req.file && currentUser?.avatarPublicId) {
+      deleteFromCloudinary(currentUser.avatarPublicId).catch((err) =>
+        console.error("Failed to delete legacy avatar:", err),
+      );
+    }
+
     return res.json({
       message: "Profile updated successfully",
       user: updatedUser,
     });
   } catch (err) {
+    // CLEANUP: If DB update failed but we uploaded an asset, remove the orphaned asset
+    if (newUploadedPublicId) {
+      await deleteFromCloudinary(newUploadedPublicId).catch((cleanupErr) =>
+        console.error("Failed to cleanup orphaned avatar:", cleanupErr),
+      );
+    }
+
+    // Handle unique constraint collisions (P2002)
+    if (err.code === "P2002") {
+      return res.status(409).json({ error: "Username is already taken." });
+    }
+
     console.error("Update Me Error:", err);
     return res.status(500).json({ error: "Server error updating profile." });
   }
@@ -206,7 +223,7 @@ export const deleteUser = async (req, res) => {
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, username: true },
+      select: { id: true, username: true, avatarPublicId: true },
     });
 
     if (!existingUser) {
@@ -217,6 +234,13 @@ export const deleteUser = async (req, res) => {
     await prisma.user.delete({
       where: { id },
     });
+
+    // Clean up external Cloudinary assets post-deletion
+    if (existingUser.avatarPublicId) {
+      deleteFromCloudinary(existingUser.avatarPublicId).catch((err) =>
+        console.error("Failed to delete user avatar during hard delete:", err),
+      );
+    }
 
     return res.json({
       message: `User "${existingUser.username}" hard deleted successfully.`,
