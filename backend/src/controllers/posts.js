@@ -1,4 +1,7 @@
 import { prisma } from "../config/db.js";
+import { createUniqueSlug } from "../utils/slugify.js";
+import slugify from "slugify";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 /**
  * GET /api/v1/posts
@@ -102,7 +105,7 @@ export const getPosts = async (req, res) => {
  */
 export const getPostBySlug = async (req, res) => {
   try {
-    const { slug } = req.params;
+    const { slug } = req.valid.params;
 
     // Check if post exists and is published
     const existingPost = await prisma.post.findUnique({
@@ -162,5 +165,100 @@ export const getPostBySlug = async (req, res) => {
     return res
       .status(500)
       .json({ error: "Server error fetching post details." });
+  }
+};
+
+/**
+ * POST /api/v1/posts
+ * Author / Admin - Create a new post
+ */
+export const createPost = async (req, res) => {
+  try {
+    const { title, content, excerpt, status, categoryId, tags } =
+      req.valid.body;
+    const authorId = req.user.id;
+
+    // Upload Cover Image to Cloudinary if attached
+    let coverImageUrl = null;
+    if (req.file) {
+      coverImageUrl = await uploadToCloudinary(
+        req.file.buffer,
+        "blog-api/posts",
+      );
+    }
+
+    // Generate unique slug from title
+    const slug = await createUniqueSlug(title);
+
+    // Validate Category if provided
+    if (categoryId) {
+      const categoryExists = await prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+      if (categoryExists) {
+        return res
+          .status(400)
+          .json({ error: "Selected category does not exist." });
+      }
+    }
+
+    // Prepare tag connections (creates new tags automatically if they dont exist)
+    const tagConnectOrCreate = tags.map((tagName) => {
+      const tagSlug = slugify(tagName, {
+        lower: true,
+        strict: true,
+        trim: true,
+      });
+      return {
+        where: { slug: tagSlug },
+        create: { name: tagName, slug: tagSlug },
+      };
+    });
+
+    // Create Post in DB
+    const post = await prisma.post.create({
+      data: {
+        title,
+        slug,
+        content,
+        excerpt: excerpt || content.substring(0, 150) + "...",
+        coverImage: coverImageUrl,
+        status: status || "DRAFT",
+        publishedAt: status === "PUBLISHED" ? new Date() : null,
+        authorId,
+        categoryId: categoryId || null,
+        tags: {
+          connectOrCreate: tagConnectOrCreate,
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        content: true,
+        coverImage: true,
+        status: true,
+        publishedAt: true,
+        createdAt: true,
+        author: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
+        category: {
+          select: { id: true, name: true, slug: true },
+        },
+        tags: {
+          select: { id: true, name: true, slug: true },
+        },
+      },
+    });
+
+    return res.status(201).json({
+      message: "Post created successfully.",
+      post,
+    });
+  } catch (err) {
+    console.error("Create Post Error:", err);
+    return res.status(500).json({ error: "Server error creating post." });
   }
 };
