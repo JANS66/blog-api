@@ -1,5 +1,8 @@
 import { prisma } from "../config/db.js";
-import { uploadToCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 
 /**
  * GET /api/v1/users/me
@@ -35,18 +38,9 @@ export const getMe = async (req, res) => {
 export const updateMe = async (req, res) => {
   try {
     const { username, bio } = req.valid.body;
-    let newAvatarUrl;
 
-    // If an image file was attached in form-data ("avatar")
-    if (req.file) {
-      newAvatarUrl = await uploadToCloudinary(
-        req.file.buffer,
-        "blog-api/avatars",
-      );
-    }
-
-    // Prevent empty updates
-    if (username === undefined && bio === undefined && !newAvatarUrl) {
+    // 1. Short circuit: Check empty updates BEFORE any async I/O or DB calls
+    if (username === undefined && bio === undefined && !req.file) {
       return res
         .status(400)
         .json({ error: "Please provide at least one field to update." });
@@ -62,13 +56,42 @@ export const updateMe = async (req, res) => {
       }
     }
 
+    // Handle Avatar File Upload and Cloudinary Cleanup
+    let newAvatarUrl;
+    let newAvatarPublicId;
+
+    if (req.file) {
+      // Fetch users current avatarPublicId from DB
+      const currentUser = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { avatarPublicId: true },
+      });
+
+      // Delete old avatar from Cloudinary if it exists
+      if (currentUser?.avatarPublicId) {
+        await deleteFromCloudinary(currentUser.avatarPublicId);
+      }
+
+      // Upload new avatar to Cloudinary
+      const uploadResult = await uploadToCloudinary(
+        req.file.buffer,
+        "blog-api/avatars",
+      );
+
+      newAvatarUrl = uploadResult.url;
+      newAvatarPublicId = uploadResult.publicId;
+    }
+
     // Update Database
     const updatedUser = await prisma.user.update({
       where: { id: req.user.id },
       data: {
         ...(username !== undefined && { username }),
         ...(bio !== undefined && { bio }),
-        ...(newAvatarUrl && { avatarUrl: newAvatarUrl }),
+        ...(newAvatarUrl && {
+          avatarUrl: newAvatarUrl,
+          avatarPublicId: newAvatarPublicId,
+        }),
       },
       select: {
         id: true,
@@ -77,6 +100,7 @@ export const updateMe = async (req, res) => {
         role: true,
         bio: true,
         avatarUrl: true,
+        avatarPublicId: true,
         updatedAt: true,
       },
     });

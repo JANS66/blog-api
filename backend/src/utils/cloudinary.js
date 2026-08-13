@@ -31,7 +31,7 @@ export const uploadToCloudinary = (
   let transformations = customTransformations;
   if (!transformations) {
     if (folder.includes("avatar")) {
-      transformation = DEFAULT_TRANSFORMATIONS.avatars;
+      transformations = DEFAULT_TRANSFORMATIONS.avatars;
     } else if (folder.includes("post")) {
       transformations = DEFAULT_TRANSFORMATIONS.posts;
     } else {
@@ -48,9 +48,21 @@ export const uploadToCloudinary = (
       },
       (error, result) => {
         if (error) return reject(error);
-        resolve(result.secure_url);
+        resolve({
+          url: result.secure_url,
+          publicId: result.public_id,
+        });
       },
     );
     stream.end(fileBuffer);
   });
+};
+
+export const deleteFromCloudinary = async (publicId) => {
+  if (!publicId) return;
+  try {
+    await cloudinary.uploader.destroy(publicId);
+  } catch (err) {
+    console.error("Cloudinary Deletion Error:", err);
+  }
 };

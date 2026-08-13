@@ -1,7 +1,10 @@
 import { prisma } from "../config/db.js";
 import { createUniqueSlug } from "../utils/slugify.js";
 import slugify from "slugify";
-import { uploadToCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 
 /**
  * GET /api/v1/posts
@@ -298,6 +301,7 @@ export const updatePost = async (req, res) => {
         authorId: true,
         title: true,
         status: true,
+        coverPublicId: true,
         publishedAt: true,
       },
     });
@@ -321,11 +325,22 @@ export const updatePost = async (req, res) => {
 
     // Handle Cover Image upload to Cloudinary
     let coverImageUrl;
+    let coverImagePublicId;
     if (req.file) {
-      coverImageUrl = await uploadToCloudinary(
+      // Clean up old image using stored ID
+      if (existingPost.coverPublicId) {
+        await deleteFromCloudinary(existingPost.coverPublicId);
+      }
+
+      // Upload new image
+      const { url, publicId } = await uploadToCloudinary(
         req.file.buffer,
         "blog-api/posts",
       );
+
+      // Save both to DB
+      coverImageUrl = url;
+      coverImagePublicId = publicId;
     }
 
     // Handle Category validation
@@ -375,7 +390,12 @@ export const updatePost = async (req, res) => {
         ...(newSlug && { slug: newSlug }),
         ...(content !== undefined && { content }),
         ...(excerpt !== undefined && { excerpt }),
-        ...(coverImageUrl && { coverImage: coverImageUrl }),
+        // Save both cover image URL and publicId when a new file was uploaded
+        ...(coverImageUrl &&
+          coverImagePublicId && {
+            coverImage: coverImageUrl,
+            coverPublicId: coverImagePublicId,
+          }),
         ...(status !== undefined && { status }),
         ...(publishedAtUpdate && { publishedAt: publishedAtUpdate }),
         ...(categoryId !== undefined && { categoryId }),
@@ -388,6 +408,7 @@ export const updatePost = async (req, res) => {
         excerpt: true,
         content: true,
         coverImage: true,
+        coverPublicId: true,
         status: true,
         publishedAt: true,
         updatedAt: true,
@@ -405,7 +426,7 @@ export const updatePost = async (req, res) => {
 
     return res.json({
       message: "Post updated successfully.",
-      post: updatePost,
+      post: updatedPost,
     });
   } catch (err) {
     console.error("Update Post Error:", err);
