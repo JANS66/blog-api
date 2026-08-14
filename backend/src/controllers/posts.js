@@ -176,33 +176,40 @@ export const getPostBySlug = async (req, res) => {
  * Author / Admin - Create a new post
  */
 export const createPost = async (req, res) => {
+  let uploadedPublicId = null;
+
   try {
     const { title, content, excerpt, status, categoryId, tags } =
       req.valid.body;
     const authorId = req.user.id;
 
-    // Upload Cover Image to Cloudinary if attached
-    let coverImageUrl = null;
-    if (req.file) {
-      coverImageUrl = await uploadToCloudinary(
-        req.file.buffer,
-        "blog-api/posts",
-      );
-    }
-
-    // Generate unique slug from title
-    const slug = await createUniqueSlug(title);
-
+    // FAST VALIDATION FIRST (Before Cloudinary upload)
     // Validate Category if provided
     if (categoryId) {
       const categoryExists = await prisma.category.findUnique({
         where: { id: categoryId },
       });
-      if (categoryExists) {
+      if (!categoryExists) {
         return res
           .status(400)
           .json({ error: "Selected category does not exist." });
       }
+    }
+
+    // Generate unique slug from title
+    const slug = await createUniqueSlug(title);
+
+    // Upload Cover Image to Cloudinary if attached
+    let coverImageUrl = null;
+    let coverPublicId = null;
+    if (req.file) {
+      const uploadResult = await uploadToCloudinary(
+        req.file.buffer,
+        "blog-api/posts",
+      );
+      coverImageUrl = uploadResult.url;
+      coverPublicId = uploadResult.publicId;
+      uploadedPublicId = uploadResult.publicId;
     }
 
     // Prepare tag connections (creates new tags automatically if they dont exist)
@@ -226,6 +233,7 @@ export const createPost = async (req, res) => {
         content,
         excerpt: excerpt || content.substring(0, 150) + "...",
         coverImage: coverImageUrl,
+        coverPublicId: coverPublicId,
         status: status || "DRAFT",
         publishedAt: status === "PUBLISHED" ? new Date() : null,
         authorId,
@@ -241,6 +249,7 @@ export const createPost = async (req, res) => {
         excerpt: true,
         content: true,
         coverImage: true,
+        coverPublicId: true,
         status: true,
         publishedAt: true,
         createdAt: true,
@@ -261,6 +270,13 @@ export const createPost = async (req, res) => {
       post,
     });
   } catch (err) {
+    // ROLLBACK: Remove uploaded asset if DB creation failes
+    if (uploadedPublicId) {
+      await deleteFromCloudinary(uploadedPublicId).catch((cleanupErr) => {
+        console.error("Failed to cleanup orphaned post cover:", cleanupErr);
+      });
+    }
+
     console.error("Create Post Error:", err);
     return res.status(500).json({ error: "Server error creating post." });
   }
@@ -271,6 +287,8 @@ export const createPost = async (req, res) => {
  * Author (Owner) / Admin - Update post details
  */
 export const updatePost = async (req, res) => {
+  let newUploadedPublicId = null;
+
   try {
     const { id } = req.valid.params;
     const { title, content, excerpt, status, categoryId, tags } =
@@ -317,33 +335,7 @@ export const updatePost = async (req, res) => {
       });
     }
 
-    // Handle Title and Slug regeneration
-    let newSlug;
-    if (title && title !== existingPost.title) {
-      newSlug = await createUniqueSlug(title);
-    }
-
-    // Handle Cover Image upload to Cloudinary
-    let coverImageUrl;
-    let coverImagePublicId;
-    if (req.file) {
-      // Clean up old image using stored ID
-      if (existingPost.coverPublicId) {
-        await deleteFromCloudinary(existingPost.coverPublicId);
-      }
-
-      // Upload new image
-      const { url, publicId } = await uploadToCloudinary(
-        req.file.buffer,
-        "blog-api/posts",
-      );
-
-      // Save both to DB
-      coverImageUrl = url;
-      coverImagePublicId = publicId;
-    }
-
-    // Handle Category validation
+    // Validate Category early
     if (categoryId) {
       const categoryExists = await prisma.category.findUnique({
         where: { id: categoryId },
@@ -353,6 +345,26 @@ export const updatePost = async (req, res) => {
           .status(400)
           .json({ error: "Selected category does not exist." });
       }
+    }
+
+    // Handle Title and Slug regeneration
+    let newSlug;
+    if (title && title !== existingPost.title) {
+      newSlug = await createUniqueSlug(title);
+    }
+
+    // Upload NEW file to Cloudinary first
+    let coverImageUrl;
+    let coverImagePublicId;
+    if (req.file) {
+      // Upload new image
+      const { url, publicId } = await uploadToCloudinary(
+        req.file.buffer,
+        "blog-api/posts",
+      );
+      coverImageUrl = url;
+      coverImagePublicId = publicId;
+      newUploadedPublicId = publicId;
     }
 
     // Handle Tag update (removes old tag associations and connects/creates new ones)
@@ -424,11 +436,25 @@ export const updatePost = async (req, res) => {
       },
     });
 
+    // Delete OLD asset ONLY AFTER DB update succeeds
+    if (req.file && existingPost.coverPublicId) {
+      deleteFromCloudinary(existingPost.coverPublicId).catch((err) => {
+        console.error("Failed to delete legacy post cover:", err);
+      });
+    }
+
     return res.json({
       message: "Post updated successfully.",
       post: updatedPost,
     });
   } catch (err) {
+    // CLEANUP: Delete newly uploaded asset if DB update fails
+    if (newUploadedPublicId) {
+      await deleteFromCloudinary(newUploadedPublicId).catch((cleanupErr) => {
+        console.error("Failed to cleanup orphaned post cover:", cleanupErr);
+      });
+    }
+
     console.error("Update Post Error:", err);
     return res.status(500).json({ error: "Server error updating post." });
   }
@@ -465,15 +491,17 @@ export const deletePost = async (req, res) => {
       });
     }
 
-    // Clean up cover image from Cloudinary if it exists
-    if (existingPost.coverPublicId) {
-      await deleteFromCloudinary(existingPost.coverPublicId);
-    }
-
-    // Delete post from Database
+    // Delete post from Database FIRST
     await prisma.post.delete({
       where: { id },
     });
+
+    // Clean up cover image from Cloudinary AFTER successful DB deletion
+    if (existingPost.coverPublicId) {
+      deleteFromCloudinary(existingPost.coverPublicId).catch((err) => {
+        console.error("Failed to delete post cover image during delete:", err);
+      });
+    }
 
     return res.json({
       message: "Post deleted successfully.",
