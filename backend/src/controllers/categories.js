@@ -1,4 +1,5 @@
 import { prisma } from "../config/db.js";
+import { createUniqueSlug } from "../utils/slugify.js";
 
 /**
  * GET /api/v1/categories
@@ -40,5 +41,55 @@ export const getCategories = async (req, res) => {
   } catch (err) {
     console.error("Get Categories Error:", err);
     return res.status(500).json({ error: "Server error fetching categories." });
+  }
+};
+
+/**
+ * POST /api/v1/categories
+ * Admin - Create a new category
+ */
+export const createCategory = async (req, res) => {
+  try {
+    const { name } = req.valid.body;
+
+    // Check for duplicate category name
+    const existingCategory = await prisma.category.findFirst({
+      where: {
+        name: {
+          equals: name,
+          mode: "insensitive", // Case insensitive collision check
+        },
+      },
+    });
+
+    if (existingCategory) {
+      return res
+        .status(409)
+        .json({ error: "A category with this name already exists." });
+    }
+
+    // Generate unique slug
+    const slug = await createUniqueSlug(name);
+
+    // Insert into Database
+    const category = await prisma.category.create({
+      data: {
+        name,
+        slug,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
+
+    return res.status(201).json({
+      message: "Category created successfully.",
+      category,
+    });
+  } catch (err) {
+    console.error("Create Category Error:", err);
+    return res.status(500).json({ error: "Server error creating category." });
   }
 };

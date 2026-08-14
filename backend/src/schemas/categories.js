@@ -4,3 +4,11 @@ export const getCategoriesQuerySchema = z.object({
   sortBy: z.enum(["name", "createdAt"]).optional().default("name"),
   order: z.enum(["asc", "desc"]).optional().default("asc"),
 });
+
+export const createCategorySchema = z.object({
+  name: z
+    .string({ required_error: "Category name is required" })
+    .min(2, "Category name must be at least 2 characters")
+    .max(50, "Category name cannot exceed 50 characters")
+    .trim(),
+});
