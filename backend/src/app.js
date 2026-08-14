@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.js";
 import usersRoutes from "./routes/users.js";
 import postsRoutes from "./routes/posts.js";
 import cookieParser from "cookie-parser";
+import categoriesRouter from "./routes/categories.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/posts", postsRoutes);
+app.use("/api/v1/categories", categoriesRouter);
 
 // Health check endpoint
 app.get("/health", async (req, res) => {
