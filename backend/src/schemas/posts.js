@@ -103,3 +103,9 @@ export const updatePostSchema = z.object({
     ])
     .optional(),
 });
+
+export const deletePostParamsSchema = z.object({
+  id: z
+    .string({ required_error: "Post ID is required" })
+    .uuid("Invalid Post ID format. Must be a valid UUID"),
+});

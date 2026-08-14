@@ -433,3 +433,53 @@ export const updatePost = async (req, res) => {
     return res.status(500).json({ error: "Server error updating post." });
   }
 };
+
+/**
+ * DELETE /api/v1/posts/:id
+ * Author (Owner) / Admin - Delete post and its Cloudinary cover image
+ */
+export const deletePost = async (req, res) => {
+  try {
+    const { id } = req.valid.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Fetch post to check existence, ownership, and Cloudinary coverPublicId
+    const existingPost = await prisma.post.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        authorId: true,
+        coverPublicId: true,
+      },
+    });
+
+    if (!existingPost) {
+      return res.status(404).json({ error: "Post not found." });
+    }
+
+    // Authorization check: Must be post owner or ADMIN
+    if (existingPost.authorId !== userId && userRole !== "ADMIN") {
+      return res.status(403).json({
+        error: "Access denied. You can only delete your own posts.",
+      });
+    }
+
+    // Clean up cover image from Cloudinary if it exists
+    if (existingPost.coverPublicId) {
+      await deleteFromCloudinary(existingPost.coverPublicId);
+    }
+
+    // Delete post from Database
+    await prisma.post.delete({
+      where: { id },
+    });
+
+    return res.json({
+      message: "Post deleted successfully.",
+    });
+  } catch (err) {
+    console.error("Delete Post Error:", err);
+    return res.status(500).json({ error: "Server error deleting post." });
+  }
+};

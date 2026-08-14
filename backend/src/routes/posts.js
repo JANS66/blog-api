@@ -4,31 +4,31 @@ import {
   getPostBySlug,
   createPost,
   updatePost,
+  deletePost,
 } from "../controllers/posts.js";
-import { validate } from "../middleware/validate.js";
 import { authenticate, authorize } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import { upload } from "../middleware/upload.js";
 import {
   getPostsQuerySchema,
   getPostBySlugParamsSchema,
   createPostSchema,
   updatePostParamsSchema,
   updatePostSchema,
+  deletePostParamsSchema,
 } from "../schemas/posts.js";
-import { upload } from "../middleware/upload.js";
 
 const router = Router();
 
-// Public list posts endpoint
+// Public routes
 router.get("/", validate({ query: getPostsQuerySchema }), getPosts);
-
-// Public get single post by slug
 router.get(
   "/:slug",
   validate({ params: getPostBySlugParamsSchema }),
   getPostBySlug,
 );
 
-// Author and Admin route
+// Author and Admin - Create Post
 router.post(
   "/",
   authenticate,
@@ -46,6 +46,15 @@ router.patch(
   upload.single("coverImage"),
   validate({ params: updatePostParamsSchema, body: updatePostSchema }),
   updatePost,
+);
+
+// Author (Owner) and Admin - Delete Post
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("AUTHOR", "ADMIN"),
+  validate({ params: deletePostParamsSchema }),
+  deletePost,
 );
 
 export default router;
