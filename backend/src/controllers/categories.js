@@ -89,6 +89,13 @@ export const createCategory = async (req, res) => {
       category,
     });
   } catch (err) {
+    // Handle database unique constraint collisions (P2002)
+    if (err.code === "P2002") {
+      return res
+        .status(409)
+        .json({ error: "A category with this name or slug already exists." });
+    }
+
     console.error("Create Category Error:", err);
     return res.status(500).json({ error: "Server error creating category." });
   }
