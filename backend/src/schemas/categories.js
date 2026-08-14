@@ -12,3 +12,10 @@ export const createCategorySchema = z.object({
     .max(50, "Category name cannot exceed 50 characters")
     .trim(),
 });
+
+export const deleteCategoryParamsSchema = z.object({
+  id: z
+    .string({ required_error: "Category ID is required" })
+    .min(1, "Category ID cannot be empty")
+    .trim(),
+});

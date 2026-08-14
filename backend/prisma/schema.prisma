@@ -48,7 +48,7 @@ model Post {
   author   User   @relation(fields: [authorId], references: [id])
 
   categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id])
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   tags     Tag[]
   comments Comment[]

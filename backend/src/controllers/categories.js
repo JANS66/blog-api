@@ -100,3 +100,31 @@ export const createCategory = async (req, res) => {
     return res.status(500).json({ error: "Server error creating category." });
   }
 };
+
+/**
+ * DELETE /api/v1/categories/:id
+ * Admin - Delete category
+ */
+export const deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.valid.params;
+
+    // Direct deletion with returned data (avoids unnecessary findUnique round trip)
+    const deletedCategory = await prisma.category.delete({
+      where: { id },
+      select: { id: true, name: true },
+    });
+
+    return res.json({
+      message: `Category "${existingCategory.name}" deleted successfully.`,
+    });
+  } catch (err) {
+    // Record to delete does not exist in DB
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Category not found." });
+    }
+
+    console.error("Delete Category Error:", err);
+    return res.status(500).json({ error: "Server error deleting category." });
+  }
+};
