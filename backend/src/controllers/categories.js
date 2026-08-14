@@ -116,7 +116,7 @@ export const deleteCategory = async (req, res) => {
     });
 
     return res.json({
-      message: `Category "${existingCategory.name}" deleted successfully.`,
+      message: `Category "${deletedCategory.name}" deleted successfully.`,
     });
   } catch (err) {
     // Record to delete does not exist in DB
