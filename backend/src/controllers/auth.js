@@ -9,23 +9,10 @@ export const register = async (req, res) => {
   try {
     const { email, username, password } = req.valid.body;
 
-    // Check if email or username is taken
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [{ email }, { username }],
-      },
-    });
-
-    if (existingUser) {
-      return res
-        .status(409)
-        .json({ error: "User with this email or username already exists." });
-    }
-
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Direct atomic insert
     const user = await prisma.user.create({
       data: {
         email,
@@ -41,9 +28,8 @@ export const register = async (req, res) => {
       },
     });
 
+    // Issue Auth
     const token = generateToken({ userId: user.id, role: user.role });
-
-    // Set HTTP Only Cookie
     setAuthCookie(res, token);
 
     return res.status(201).json({
@@ -51,14 +37,13 @@ export const register = async (req, res) => {
       user,
     });
   } catch (err) {
-    console.error("Register Error:", err);
-
     if (err.code === "P2002") {
-      return res
-        .status(409)
-        .json({ error: "Email or username already taken." });
+      return res.status(409).json({
+        error: "Email or username is already taken.",
+      });
     }
 
+    console.error("Register Error:", err);
     return res.status(500).json({ error: "Server error during registration." });
   }
 };

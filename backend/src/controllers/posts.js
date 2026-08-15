@@ -183,36 +183,9 @@ export const createPost = async (req, res) => {
       req.valid.body;
     const authorId = req.user.id;
 
-    // FAST VALIDATION FIRST (Before Cloudinary upload)
-    // Validate Category if provided
-    if (categoryId) {
-      const categoryExists = await prisma.category.findUnique({
-        where: { id: categoryId },
-      });
-      if (!categoryExists) {
-        return res
-          .status(400)
-          .json({ error: "Selected category does not exist." });
-      }
-    }
-
-    // Generate unique slug from title
+    // Prepare synchronous data and slug generation FIRST
     const slug = await createUniqueSlug(title);
 
-    // Upload Cover Image to Cloudinary if attached
-    let coverImageUrl = null;
-    let coverPublicId = null;
-    if (req.file) {
-      const uploadResult = await uploadToCloudinary(
-        req.file.buffer,
-        "blog-api/posts",
-      );
-      coverImageUrl = uploadResult.url;
-      coverPublicId = uploadResult.publicId;
-      uploadedPublicId = uploadResult.publicId;
-    }
-
-    // Prepare tag connections (creates new tags automatically if they dont exist)
     const tagConnectOrCreate = tags.map((tagName) => {
       const tagSlug = slugify(tagName, {
         lower: true,
@@ -224,6 +197,20 @@ export const createPost = async (req, res) => {
         create: { name: tagName, slug: tagSlug },
       };
     });
+
+    // Upload Cover Image to Cloudinary ONLY after slug/tags succeed
+    let coverImageUrl = null;
+    let coverPublicId = null;
+
+    if (req.file) {
+      const uploadResult = await uploadToCloudinary(
+        req.file.buffer,
+        "blog-api/posts",
+      );
+      coverImageUrl = uploadResult.url;
+      coverPublicId = uploadResult.publicId;
+      uploadedPublicId = uploadResult.publicId;
+    }
 
     // Create Post in DB
     const post = await prisma.post.create({
@@ -275,6 +262,20 @@ export const createPost = async (req, res) => {
       await deleteFromCloudinary(uploadedPublicId).catch((cleanupErr) => {
         console.error("Failed to cleanup orphaned post cover:", cleanupErr);
       });
+    }
+
+    // Foreign Key constraint failure (e.g., categoryId does not exist)
+    if (err.code === "P2003") {
+      return res
+        .status(400)
+        .json({ error: "Selected category does not exist." });
+    }
+
+    // Unique constraint violation (e.g., rare race condition on slug)
+    if (err.code === "P2002") {
+      return res
+        .status(409)
+        .json({ error: "A post with this title or slug already exists." });
     }
 
     console.error("Create Post Error:", err);
@@ -335,36 +336,10 @@ export const updatePost = async (req, res) => {
       });
     }
 
-    // Validate Category early
-    if (categoryId) {
-      const categoryExists = await prisma.category.findUnique({
-        where: { id: categoryId },
-      });
-      if (!categoryExists) {
-        return res
-          .status(400)
-          .json({ error: "Selected category does not exist." });
-      }
-    }
-
     // Handle Title and Slug regeneration
     let newSlug;
     if (title && title !== existingPost.title) {
       newSlug = await createUniqueSlug(title);
-    }
-
-    // Upload NEW file to Cloudinary first
-    let coverImageUrl;
-    let coverImagePublicId;
-    if (req.file) {
-      // Upload new image
-      const { url, publicId } = await uploadToCloudinary(
-        req.file.buffer,
-        "blog-api/posts",
-      );
-      coverImageUrl = url;
-      coverImagePublicId = publicId;
-      newUploadedPublicId = publicId;
     }
 
     // Handle Tag update (removes old tag associations and connects/creates new ones)
@@ -386,6 +361,20 @@ export const updatePost = async (req, res) => {
         set: [], // Disconnect previous tags
         connectOrCreate: tagConnectOrCreate,
       };
+    }
+
+    // Upload NEW file to Cloudinary first
+    let coverImageUrl;
+    let coverImagePublicId;
+    if (req.file) {
+      // Upload new image
+      const { url, publicId } = await uploadToCloudinary(
+        req.file.buffer,
+        "blog-api/posts",
+      );
+      coverImageUrl = url;
+      coverImagePublicId = publicId;
+      newUploadedPublicId = publicId;
     }
 
     // Determine publishedAt timestamp handling
@@ -455,6 +444,13 @@ export const updatePost = async (req, res) => {
       });
     }
 
+    // Foreign Key constraint violation (slug collision)
+    if (err.code === "P2002") {
+      return res
+        .status(409)
+        .json({ error: "A post with this title or slug already exists." });
+    }
+
     console.error("Update Post Error:", err);
     return res.status(500).json({ error: "Server error updating post." });
   }
@@ -507,6 +503,11 @@ export const deletePost = async (req, res) => {
       message: "Post deleted successfully.",
     });
   } catch (err) {
+    // Record was deleted by a concurrent request between findUnique and delete
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Post not found." });
+    }
+
     console.error("Delete Post Error:", err);
     return res.status(500).json({ error: "Server error deleting post." });
   }

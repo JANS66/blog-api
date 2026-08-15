@@ -52,26 +52,10 @@ export const createCategory = async (req, res) => {
   try {
     const { name } = req.valid.body;
 
-    // Check for duplicate category name
-    const existingCategory = await prisma.category.findFirst({
-      where: {
-        name: {
-          equals: name,
-          mode: "insensitive", // Case insensitive collision check
-        },
-      },
-    });
-
-    if (existingCategory) {
-      return res
-        .status(409)
-        .json({ error: "A category with this name already exists." });
-    }
-
     // Generate unique slug
     const slug = await createUniqueSlug(name);
 
-    // Insert into Database
+    // Atomic insert: DB handles @unique constraints natively
     const category = await prisma.category.create({
       data: {
         name,

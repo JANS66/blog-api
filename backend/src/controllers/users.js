@@ -48,27 +48,20 @@ export const updateMe = async (req, res) => {
         .json({ error: "Please provide at least one field to update." });
     }
 
-    // Verify unique username if changed
-    if (username && username !== req.user.username) {
-      const existingUser = await prisma.user.findUnique({
-        where: { username },
+    // Fetch current user data ONLY IF replacing an avatar file
+    let oldAvatarPublicId = null;
+    if (req.file) {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { avatarPublicId: true },
       });
-      if (existingUser) {
-        return res.status(409).json({ error: "Username is already taken." });
-      }
+      oldAvatarPublicId = currentUser?.avatarPublicId;
     }
 
-    // Fetch current user data needed for image management
-    const currentUser = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: { avatarPublicId: true },
-    });
-
-    // Handle Avatar File Upload and Cloudinary Cleanup
+    //Upload NEW file to Cloudinary
     let newAvatarUrl;
     let newAvatarPublicId;
 
-    // Upload NEW file first if present
     if (req.file) {
       const uploadResult = await uploadToCloudinary(
         req.file.buffer,
@@ -79,7 +72,7 @@ export const updateMe = async (req, res) => {
       newUploadedPublicId = uploadResult.publicId; // Tracked for cleanup if DB fails
     }
 
-    // Update Database
+    // Update Database (Atomic - DB enforces @unique username constraint)
     const updatedUser = await prisma.user.update({
       where: { id: req.user.id },
       data: {
@@ -139,47 +132,46 @@ export const updateMe = async (req, res) => {
 export const getUserByUsername = async (req, res) => {
   try {
     const { username } = req.valid.params;
-
     const { page, limit } = req.valid.query;
     const skip = (page - 1) * limit;
 
-    // Fetch user and their PUBLISHED posts count and list
-    const user = await prisma.user.findUnique({
-      where: { username },
-      select: {
-        id: true,
-        username: true,
-        bio: true,
-        avatarUrl: true,
-        createdAt: true,
-        posts: {
-          where: { status: "PUBLISHED" }, // Only public posts
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            excerpt: true,
-            coverImage: true,
-            createdAt: true,
+    // Run user lookup and published post counting concurrently
+    const [user, totalPosts] = await prisma.$transaction([
+      prisma.user.findUnique({
+        where: { username },
+        select: {
+          id: true,
+          username: true,
+          bio: true,
+          avatarUrl: true,
+          createdAt: true,
+          posts: {
+            where: { status: "PUBLISHED" },
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              excerpt: true,
+              coverImage: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: limit,
           },
-          orderBy: { createdAt: "desc" },
-          skip,
-          take: limit,
         },
-      },
-    });
+      }),
+      prisma.post.count({
+        where: {
+          author: { username },
+          status: "PUBLISHED",
+        },
+      }),
+    ]);
 
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
-
-    // Get total published post count for pagination metadata
-    const totalPosts = await prisma.post.count({
-      where: {
-        authorId: user.id,
-        status: "PUBLISHED",
-      },
-    });
 
     return res.json({
       user: {
@@ -220,24 +212,19 @@ export const deleteUser = async (req, res) => {
         .json({ error: "You cannot delete your own admin account." });
     }
 
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({
+    // Atomic Delete: DB enforces existence (P2025) and returns required fields
+    const deletedUser = await prisma.user.delete({
       where: { id },
-      select: { id: true, username: true, avatarPublicId: true },
+      select: {
+        id: true,
+        username: true,
+        avatarPublicId: true,
+      },
     });
 
-    if (!existingUser) {
-      return res.status(404).json({ error: "User not found." });
-    }
-
-    // Hard delete user from PostgreSQL
-    await prisma.user.delete({
-      where: { id },
-    });
-
-    // Clean up external Cloudinary assets post-deletion
-    if (existingUser.avatarPublicId) {
-      deleteFromCloudinary(existingUser.avatarPublicId).catch((err) =>
+    // Post deletion side effect: Clean up Cloudinary asset
+    if (deletedUser.avatarPublicId) {
+      deleteFromCloudinary(deletedUser.avatarPublicId).catch((err) =>
         console.error("Failed to delete user avatar during hard delete:", err),
       );
     }
@@ -246,6 +233,11 @@ export const deleteUser = async (req, res) => {
       message: `User "${existingUser.username}" hard deleted successfully.`,
     });
   } catch (err) {
+    // Record to delete does not exist
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "User not found." });
+    }
+
     console.error("Delete User Error:", err);
     return res.status(500).json({ error: "Server error deleting user." });
   }
