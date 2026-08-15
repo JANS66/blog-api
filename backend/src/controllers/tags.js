@@ -1,4 +1,5 @@
 import { prisma } from "../config/db.js";
+import { createUniqueSlug } from "../utils/slugify.js";
 
 /**
  * GET /api/v1/tags
@@ -40,5 +41,60 @@ export const getTags = async (req, res) => {
   } catch (err) {
     console.error("Get Tags Error:", err);
     return res.status(500).json({ error: "Server error fetching tags." });
+  }
+};
+
+/**
+ * POST /api/v1/tags
+ * Author / Admin - Create new tag
+ */
+export const createTag = async (req, res) => {
+  try {
+    const { name } = req.valid.body;
+
+    // Check if tag name already exists (case insensitive check)
+    const existingTag = await prisma.tag.findFirst({
+      where: {
+        name: { equals: name, mode: "insensitive" },
+      },
+    });
+
+    if (existingTag) {
+      return res.status(409).json({
+        error: "A tag with this name already exists.",
+        tag: existingTag,
+      });
+    }
+
+    // Generate unique slug
+    const slug = await createUniqueSlug(name);
+
+    // Create Tag in database
+    const tag = await prisma.tag.create({
+      data: {
+        name,
+        slug,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
+
+    return res.status(201).json({
+      message: "Tag created successfully.",
+      tag,
+    });
+  } catch (err) {
+    // Catch race-condition collisions on standard DB @unique constraints (P2002)
+    if (err.code === "P2002") {
+      return res.status(409).json({
+        error: "A tag with this name or slug already exists.",
+      });
+    }
+
+    console.error("Create Tag Error:", err);
+    return res.status(500).json({ error: "Server error creating tag." });
   }
 };
