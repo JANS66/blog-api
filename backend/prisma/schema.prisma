@@ -1,9 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [citext]
 }
 
 enum Role {
@@ -20,8 +22,8 @@ enum PostStatus {
 
 model User {
   id             String    @id @default(uuid())
-  email          String    @unique
-  username       String    @unique
+  email          String    @unique @db.Citext
+  username       String    @unique @db.Citext
   passwordHash   String
   role           Role      @default(USER)
   bio            String?
@@ -36,7 +38,7 @@ model User {
 model Post {
   id            String     @id @default(uuid())
   title         String
-  slug          String     @unique
+  slug          String     @unique @db.Citext
   excerpt       String?
   content       String
   coverImage    String?
@@ -60,15 +62,15 @@ model Post {
 
 model Category {
   id    String @id @default(uuid())
-  name  String @unique
-  slug  String @unique
+  name  String @unique @db.Citext
+  slug  String @unique @db.Citext
   posts Post[]
 }
 
 model Tag {
   id    String @id @default(uuid())
-  name  String @unique
-  slug  String @unique
+  name  String @unique @db.Citext
+  slug  String @unique @db.Citext
   posts Post[]
 }
 

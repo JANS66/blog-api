@@ -23,10 +23,7 @@ export const getPosts = async (req, res) => {
     if (category) {
       where.category = {
         // Match either slug (URL params, frontend dropdowns) or display name (fallback/search inputs)
-        OR: [
-          { slug: category },
-          { name: { equals: category, mode: "insensitive" } },
-        ],
+        OR: [{ slug: category }, { name: category }],
       };
     }
 
@@ -34,7 +31,7 @@ export const getPosts = async (req, res) => {
     if (tag) {
       where.tags = {
         some: {
-          OR: [{ slug: tag }, { name: { equals: tag, mode: "insensitive" } }],
+          OR: [{ slug: tag }, { name: tag }],
         },
       };
     }

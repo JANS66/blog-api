@@ -51,22 +51,6 @@ export const getTags = async (req, res) => {
 export const createTag = async (req, res) => {
   try {
     const { name } = req.valid.body;
-
-    // Check if tag name already exists (case insensitive check)
-    const existingTag = await prisma.tag.findFirst({
-      where: {
-        name: { equals: name, mode: "insensitive" },
-      },
-    });
-
-    if (existingTag) {
-      return res.status(409).json({
-        error: "A tag with this name already exists.",
-        tag: existingTag,
-      });
-    }
-
-    // Generate unique slug
     const slug = await createUniqueSlug(name);
 
     // Create Tag in database
