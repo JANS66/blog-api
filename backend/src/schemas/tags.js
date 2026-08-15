@@ -12,3 +12,9 @@ export const createTagSchema = z.object({
     .max(30, "Tag name cannot exceed 30 characters")
     .trim(),
 });
+
+export const deleteTagParamsSchema = z.object({
+  id: z
+    .string({ required_error: "Tag ID is required" })
+    .uuid("Invalid Tag ID format. Must be a valid UUID"),
+});

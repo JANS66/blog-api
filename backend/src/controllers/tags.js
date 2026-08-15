@@ -82,3 +82,31 @@ export const createTag = async (req, res) => {
     return res.status(500).json({ error: "Server error creating tag." });
   }
 };
+
+/**
+ * DELETE /api/v1/tags/:id
+ * Admin - Delete Tag
+ */
+export const deleteTag = async (req, res) => {
+  try {
+    const { id } = req.valid.params;
+
+    // Direct atomic delete: DB enforces existence (P2025)
+    await prisma.tag.delete({
+      where: { id },
+    });
+
+    return res.json({
+      message: "Tag deleted successfully.",
+      deletedTagId: id,
+    });
+  } catch (err) {
+    // Record to delete does not exist
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Tag not found." });
+    }
+
+    console.error("Delete Tag Error:", err);
+    return res.status(500).json({ error: "Server error deleting tag." });
+  }
+};

@@ -1,8 +1,12 @@
 import { Router } from "express";
-import { getTags, createTag } from "../controllers/tags.js";
+import { getTags, createTag, deleteTag } from "../controllers/tags.js";
 import { authenticate, authorize } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
-import { getTagsQuerySchema, createTagSchema } from "../schemas/tags.js";
+import {
+  getTagsQuerySchema,
+  createTagSchema,
+  deleteTagParamsSchema,
+} from "../schemas/tags.js";
 
 const router = Router();
 
@@ -16,6 +20,15 @@ router.post(
   authorize("AUTHOR", "ADMIN"),
   validate({ body: createTagSchema }),
   createTag,
+);
+
+// Admin only route
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("ADMIN"),
+  validate({ params: deleteTagParamsSchema }),
+  deleteTag,
 );
 
 export default router;
