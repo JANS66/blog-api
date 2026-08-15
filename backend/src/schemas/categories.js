@@ -16,6 +16,19 @@ export const createCategorySchema = z.object({
 export const deleteCategoryParamsSchema = z.object({
   id: z
     .string({ required_error: "Category ID is required" })
-    .min(1, "Category ID cannot be empty")
+    .uuid("Invalid Category ID format. Must be a valid UUID"),
+});
+
+export const updateCategoryParamsSchema = z.object({
+  id: z
+    .string({ required_error: "Category ID is required" })
+    .uuid("Invalid Category ID format. Must be a valid UUID"),
+});
+
+export const updateCategorySchema = z.object({
+  name: z
+    .string({ required_error: "Category name is required" })
+    .min(2, "Category name must be at least 2 characters")
+    .max(50, "Category name cannot exceed 50 characters")
     .trim(),
 });

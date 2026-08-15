@@ -128,3 +128,51 @@ export const deleteCategory = async (req, res) => {
     return res.status(500).json({ error: "Server error deleting category." });
   }
 };
+
+/**
+ * PATCH /api/v1/categories/:id
+ * Admin - Rename category and regenerate slug
+ */
+export const updateCategory = async (req, res) => {
+  try {
+    const { id } = req.valid.params;
+    const { name } = req.valid.body;
+
+    // Generate unique slug for the new name
+    const newSlug = await createUniqueSlug(name);
+
+    // Direct update: Database handles uniqueness and missing records atomically
+    const updatedCategory = await prisma.category.update({
+      where: { id },
+      data: {
+        name,
+        slug: newSlug,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
+
+    return res.json({
+      message: "Category updated successfully.",
+      category: updatedCategory,
+    });
+  } catch (err) {
+    // Unique constraint violation (Name or Slug collision)
+    if (err.code === "P2002") {
+      return res
+        .status(409)
+        .json({ error: "A category with this name already exists." });
+    }
+
+    // Record to update does not exist in DB
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Category not found." });
+    }
+
+    console.error("Update Category Error:", err);
+    return res.status(500).json({ error: "Server error updating category." });
+  }
+};
