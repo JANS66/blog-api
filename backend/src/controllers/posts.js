@@ -44,8 +44,8 @@ export const getPosts = async (req, res) => {
       ];
     }
 
-    // Fetch posts and total count concurrently
-    const [posts, totalPosts] = await Promise.all([
+    // Fetch posts and total count
+    const [posts, totalPosts] = await prisma.$transaction([
       prisma.post.findMany({
         where,
         select: {
