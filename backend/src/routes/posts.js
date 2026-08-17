@@ -17,6 +17,7 @@ import {
   updatePostSchema,
   deletePostParamsSchema,
 } from "../schemas/posts.js";
+import commentsRouter from "./comments.js";
 
 const router = Router();
 
@@ -56,5 +57,7 @@ router.delete(
   validate({ params: deletePostParamsSchema }),
   deletePost,
 );
+
+router.use("/:postId/comments", commentsRouter);
 
 export default router;
