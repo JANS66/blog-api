@@ -75,14 +75,20 @@ model Tag {
 }
 
 model Comment {
-  id        String    @id @default(uuid())
-  content   String
-  postId    String
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parentId  String?
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Comment[] @relation("CommentReplies")
-  createdAt DateTime  @default(now())
+  id       String  @id @default(uuid())
+  content  String
+  postId   String
+  post     Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentId String?
+
+  // Self relation using composite keys (id, postId)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId, postId], references: [id, postId], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  createdAt DateTime @default(now())
+
+  // Required so parentId + postId can form a valid composite foreign key
+  @@unique([id, postId])
 }
