@@ -64,3 +64,51 @@ export const getCommentsByPost = async (req, res) => {
     return res.status(500).json({ error: "Server error fetching comments." });
   }
 };
+
+/**
+ * POST /api/v1/posts/:postId/comments
+ * Authenticated - Add a comment or reply to a post
+ */
+export const createComment = async (req, res) => {
+  try {
+    const { postId } = req.valid.params;
+    const { content, parentId } = req.valid.body;
+    const authorId = req.user.id;
+
+    // Direct atomic insert: relies on DB foreign keys and constraints
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        postId,
+        authorId,
+        parentId: parentId || null,
+      },
+      select: {
+        id: true,
+        content: true,
+        parentId: true,
+        createdAt: true,
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return res.status(201).json({
+      message: "Comment posted successfully.",
+      comment,
+    });
+  } catch (err) {
+    // Foreign key constraint failure (e.g. invalid postId, parentId, or authorId)
+    if (err.code === "P2003") {
+      return res.status(404).json({ error: "Post not found or unavailable." });
+    }
+
+    console.error("Create Comment Error:", err);
+    return res.status(500).json({ error: "Server error creating comment." });
+  }
+};

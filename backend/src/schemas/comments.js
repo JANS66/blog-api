@@ -21,3 +21,12 @@ export const getCommentsQuerySchema = z.object({
     .catch(20)
     .default(20),
 });
+
+export const createCommentSchema = z.object({
+  content: z
+    .string({ required_error: "Comment content is required" })
+    .min(1, "Comment cannot be empty")
+    .max(1000, "Comment cannot exceed 1000 characters")
+    .trim(),
+  parentId: z.string().uuid().optional(),
+});
