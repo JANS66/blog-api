@@ -30,3 +30,9 @@ export const createCommentSchema = z.object({
     .trim(),
   parentId: z.string().uuid().optional(),
 });
+
+export const deleteCommentParamsSchema = z.object({
+  id: z
+    .string({ required_error: "Comment ID is required" })
+    .uuid("Invalid Comment ID format. Must be a valid UUID"),
+});

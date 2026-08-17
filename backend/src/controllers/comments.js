@@ -112,3 +112,52 @@ export const createComment = async (req, res) => {
     return res.status(500).json({ error: "Server error creating comment." });
   }
 };
+
+/**
+ * DELETE /api/v1/comments/:id
+ * Author (Owner) / Admin - Delete a comment
+ */
+export const deleteComment = async (req, res) => {
+  try {
+    const { id } = req.valid.params;
+    const userId = req.user.id;
+    const isAdmin = req.user.role === "ADMIN";
+
+    // Construct authorization query clause
+    const where = {
+      id,
+      ...createComment(!isAdmin && { authorId: userId }),
+    };
+
+    // Atomic delete: deletes if found AND authorized in 1 DB hit
+    const result = await prisma.comment.deleteMany({
+      where,
+    });
+
+    if (result.count === 0) {
+      // Differentiate between "Not Found" vs "Unauthorized" if the comment exists
+      const commentExists = await prisma.comment.findUnique({
+        where: { id },
+        select: { id: true },
+      });
+
+      if (!commentExists) {
+        return res.status(404).json({ error: "Comment not found." });
+      }
+
+      return res
+        .status(403)
+        .json({
+          error: "Access denied. You can only delete your own comments.",
+        });
+    }
+
+    return res.json({
+      message: "Comment deleted successfully.",
+      deletedCommentId: id,
+    });
+  } catch (err) {
+    console.error("Delete Comment Error:", err);
+    return res.status(500).json({ error: "Server error deleting comment." });
+  }
+};
