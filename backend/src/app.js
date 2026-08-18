@@ -13,7 +13,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cookieParser());
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // frontend URL
+    credentials: true, // Allows cookies
+  }),
+);
 app.use(express.json());
 
 // Mount API routes
