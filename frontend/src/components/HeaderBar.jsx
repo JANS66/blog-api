@@ -24,6 +24,9 @@ export default function HeaderBar() {
     onSuccess: async () => {
       // Explicitly clear the user entry so AuthProvider instantly sees user = null
       queryClient.setQueryData(["currentUser"], { user: null });
+
+      queryClient.clear();
+
       navigate("/login");
     },
   });

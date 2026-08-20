@@ -16,10 +16,12 @@ import {
 } from "@mantine/core";
 import { registerSchema } from "../schemas/authSchema";
 import { registerUser } from "../api/auth";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [serverError, setServerError] = useState("");
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -31,8 +33,9 @@ export default function RegisterPage() {
 
   const mutation = useMutation({
     mutationFn: registerUser,
-    onSuccess: () => {
-      // User registered and cookie set by backend
+    onSuccess: (data) => {
+      queryClient.setQueryData(["currentUser"], { user: data.user });
+
       navigate("/");
     },
     onError: (error) => {
