@@ -1,37 +1,34 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
+import EditProfilePage from "./pages/EditProfilePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute";
+import MainLayout from "./components/MainLayout";
 
 export const router = createBrowserRouter([
-  // Guest Only Routes (Redirects logged in users to '/')
   {
-    element: <PublicOnlyRoute />,
+    element: <MainLayout />,
     children: [
+      // Guest Only Routes
       {
-        path: "/register",
-        element: <RegisterPage />,
+        element: <PublicOnlyRoute />,
+        children: [
+          { path: "/register", element: <RegisterPage /> },
+          { path: "/login", element: <LoginPage /> },
+        ],
       },
+      // Protected Routes
       {
-        path: "/login",
-        element: <LoginPage />,
+        element: <ProtectedRoute />,
+        children: [
+          { path: "/", element: <div>Protected Home Page</div> },
+          { path: "/profile", element: <div>My Profile View Page</div> },
+          { path: "/edit-profile", element: <EditProfilePage /> },
+        ],
       },
+      // Fallback redirect
+      { path: "*", element: <Navigate to="/" replace /> },
     ],
-  },
-  // Protected Routes (Redirects unauthenticated users to "/login")
-  {
-    element: <ProtectedRoute />,
-    children: [
-      {
-        path: "/",
-        element: <div>Protected Home Page</div>,
-      },
-    ],
-  },
-  // Catch all route for unmatched URLs
-  {
-    path: "*",
-    element: <Navigate to="/" replace />,
   },
 ]);
