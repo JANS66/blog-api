@@ -1,0 +1,25 @@
+import { Navigate, Outlet } from "react-router-dom";
+import { LoadingOverlay, Box } from "@mantine/core";
+import { useAuth } from "../context/useAuth";
+
+export default function ProtectedRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <Box h="100vh" pos="relative">
+        <LoadingOverlay
+          visible={true}
+          zIndex={1000}
+          overlayProps={{ radius: "sm", blur: 2 }}
+        />
+      </Box>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
+}
