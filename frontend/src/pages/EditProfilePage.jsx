@@ -20,7 +20,7 @@ import { updateProfileSchema } from "../schemas/userSchema";
 import { updateMe } from "../api/users";
 
 export default function EditProfilePage() {
-  const { user, refetchMe } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [serverError, setServerError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -44,7 +44,6 @@ export default function EditProfilePage() {
       setSuccessMsg("Profile updated successfully!");
       // Refresh current user state across AuthContext and React Query cache
       queryClient.setQueryData(["currentUser"], { user: data.user });
-      refetchMe();
     },
     onError: (error) => {
       const message =
