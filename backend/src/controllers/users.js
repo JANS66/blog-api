@@ -98,7 +98,7 @@ export const updateMe = async (req, res) => {
 
     // Delete OLD asset ONLY AFTER DB update succeeds
     if (req.file && oldAvatarPublicId) {
-      deleteFromCloudinary(currentUser.avatarPublicId).catch((err) =>
+      deleteFromCloudinary(oldAvatarPublicId).catch((err) =>
         console.error("Failed to delete legacy avatar:", err),
       );
     }
