@@ -1,6 +1,10 @@
 import { Router } from "express";
 import { getTags, createTag, deleteTag } from "../controllers/tags.js";
-import { authenticate, authorize } from "../middleware/auth.js";
+import {
+  authenticate,
+  authorize,
+  verifyActiveUser,
+} from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import {
   getTagsQuerySchema,

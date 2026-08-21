@@ -5,7 +5,11 @@ import {
   getUserByUsername,
   updateMe,
 } from "../controllers/users.js";
-import { authenticate, authorize } from "../middleware/auth.js";
+import {
+  authenticate,
+  authorize,
+  verifyActiveUser,
+} from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { upload } from "../middleware/upload.js";
 import {

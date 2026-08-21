@@ -18,7 +18,6 @@ import {
   updateCategoryParamsSchema,
   updateCategorySchema,
 } from "../schemas/categories.js";
-import { verifyActiveUser } from "../middleware/auth.js";
 
 const router = Router();
 
