@@ -64,7 +64,7 @@ export default function HeaderBar() {
 
                 <Menu.Dropdown>
                   <Menu.Label>Application</Menu.Label>
-                  <Menu.Item component={Link} to="/profile">
+                  <Menu.Item component={Link} to={`/users/${user?.username}`}>
                     My Profile
                   </Menu.Item>
                   <Menu.Item component={Link} to="/edit-profile">
