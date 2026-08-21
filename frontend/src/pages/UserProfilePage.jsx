@@ -31,6 +31,14 @@ export default function UserProfilePage() {
   const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
     queryKey: ["userProfile", username, page],
     queryFn: () => getUserByUsername(username, page, limit),
+    retry: (failureCount, error) => {
+      // If the server explicitly said 404, dont waste time retrying
+      if (error.response?.status === 404) return false;
+
+      // Retry up to 2 times for 500 server errors or connection drops
+      return failureCount < 2;
+    },
+    refetchOnWindowFocus: false, // Stop refetching when changing tabs
     placeholderData: keepPreviousData,
   });
 
