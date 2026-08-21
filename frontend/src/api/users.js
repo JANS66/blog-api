@@ -28,3 +28,8 @@ export const getUserByUsername = async (username, page = 1, limit = 10) => {
   });
   return response.data;
 };
+
+export const deleteUser = async (userId) => {
+  const response = await api.delete(`/users/${userId}`);
+  return response.data;
+};

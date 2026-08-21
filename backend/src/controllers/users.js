@@ -230,7 +230,7 @@ export const deleteUser = async (req, res) => {
     }
 
     return res.json({
-      message: `User "${existingUser.username}" hard deleted successfully.`,
+      message: `User "${deletedUser.username}" hard deleted successfully.`,
     });
   } catch (err) {
     // Record to delete does not exist

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
   Container,
@@ -19,11 +19,13 @@ import {
 } from "@mantine/core";
 import { getUserByUsername } from "../api/users";
 import { useAuth } from "../context/useAuth";
+import DeleteUserButton from "../components/DeleteUserButton";
 
 export default function UserProfilePage() {
   const { username } = useParams();
   const { user: currentUser } = useAuth();
   const [page, setPage] = useState(1);
+  const navigate = useNavigate();
   const limit = 6; // Posts per page
 
   const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
@@ -34,6 +36,7 @@ export default function UserProfilePage() {
 
   const isOwnProfile =
     currentUser?.username?.toLowerCase() === username?.toLowerCase();
+  const isAdmin = currentUser?.role === "ADMIN";
 
   if (isLoading) {
     return (
@@ -89,6 +92,14 @@ export default function UserProfilePage() {
             <Button component={Link} to="/edit-profile" variant="outline">
               Edit Profile
             </Button>
+          )}
+
+          {isAdmin && !isOwnProfile && (
+            <DeleteUserButton
+              userId={user.id}
+              username={user.username}
+              onSuccess={() => navigate("/")}
+            />
           )}
         </Group>
       </Paper>
