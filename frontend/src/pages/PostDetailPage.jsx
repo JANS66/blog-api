@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Container,
   Title,
