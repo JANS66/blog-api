@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import categoriesRouter from "./routes/categories.js";
 import tagsRouter from "./routes/tags.js";
 import commentsRouter from "./routes/comments.js";
+import multer from "multer";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -38,6 +39,34 @@ app.get("/health", async (req, res) => {
     console.error("Prisma DB Connection Error:", err);
     res.status(500).json({ status: "error", database: "disconnected" });
   }
+});
+
+// -------------------------------------------------------------
+// Global Catch-All Error Handler
+// -------------------------------------------------------------
+app.use((err, req, res, next) => {
+  console.error("Global Error Caught:", err.message);
+
+  // Handle multer specific errors
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        error: "File is too large. Maximum allowed size is 5 MB.",
+      });
+    }
+    return res.status(400).json({ error: err.message });
+  }
+
+  // Handle Custom Multer Filter errors
+  if (err.message && err.message.includes("Only image files")) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  // Fallback for any other unexpected errors
+  const statusCode = err.statusCode || err.status || 500;
+  res.status(statusCode).json({
+    error: err.message || "An unexpected error occured on the server.",
+  });
 });
 
 app.listen(PORT, () => {
