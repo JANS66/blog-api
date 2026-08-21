@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import EditProfilePage from "./pages/EditProfilePage";
 import UserProfilePage from "./pages/UserProfilePage";
 import HomePage from "./pages/HomePage";
+import PostDetailPage from "./pages/PostDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute";
 import MainLayout from "./components/MainLayout";
@@ -14,6 +15,7 @@ export const router = createBrowserRouter([
     children: [
       // Public / Guest / Logged in shared routes
       { path: "/", element: <HomePage /> },
+      { path: "/posts/:slug", element: <PostDetailPage /> },
       { path: "/users/:username", element: <UserProfilePage /> },
 
       // Guest Only Routes
