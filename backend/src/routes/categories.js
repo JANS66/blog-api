@@ -5,7 +5,11 @@ import {
   deleteCategory,
   updateCategory,
 } from "../controllers/categories.js";
-import { authenticate, authorize } from "../middleware/auth.js";
+import {
+  authenticate,
+  authorize,
+  verifyActiveUser,
+} from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import {
   getCategoriesQuerySchema,
@@ -14,6 +18,7 @@ import {
   updateCategoryParamsSchema,
   updateCategorySchema,
 } from "../schemas/categories.js";
+import { verifyActiveUser } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -24,6 +29,7 @@ router.get("/", validate({ query: getCategoriesQuerySchema }), getCategories);
 router.post(
   "/",
   authenticate,
+  verifyActiveUser,
   authorize("ADMIN"),
   validate({ body: createCategorySchema }),
   createCategory,
@@ -32,6 +38,7 @@ router.post(
 router.patch(
   "/:id",
   authenticate,
+  verifyActiveUser,
   authorize("ADMIN"),
   validate({ params: updateCategoryParamsSchema, body: updateCategorySchema }),
   updateCategory,
@@ -40,6 +47,7 @@ router.patch(
 router.delete(
   "/:id",
   authenticate,
+  verifyActiveUser,
   authorize("ADMIN"),
   validate({ params: deleteCategoryParamsSchema }),
   deleteCategory,

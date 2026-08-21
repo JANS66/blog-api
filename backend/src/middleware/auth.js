@@ -14,27 +14,17 @@ export const authenticate = async (req, res, next) => {
   try {
     const decoded = verifyToken(token);
 
-    // Fetch user from DB to verify existence and latest role
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        role: true,
-      },
-    });
+    req.user = {
+      id: decoded.userId,
+      role: decoded.role,
+    };
 
-    if (!user) {
-      return res
-        .status(401)
-        .json({ error: "Invalid token. User no longer exists." });
-    }
-
-    req.user = user; // Attach user payload to request
     next();
   } catch (err) {
-    return res.status(401).json({ error: "Invalid or expired token." });
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+      return res.status(401).json({ error: "Invalid or expired token." });
+    }
+    next(err); // Forward unexpected errors to global catch all
   }
 };
 
@@ -51,4 +41,19 @@ export const authorize = (...allowedRoles) => {
     }
     next();
   };
+};
+
+export const verifyActiveUser = async (req, res, next) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: { id: true, role: true },
+  });
+
+  if (!user) {
+    return res.status(401).json({ error: "User no longer exists." });
+  }
+
+  // Update req.user in case the role was changed recently
+  req.user.role = user.role;
+  next();
 };

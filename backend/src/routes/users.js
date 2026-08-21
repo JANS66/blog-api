@@ -21,6 +21,7 @@ router.get("/me", authenticate, getMe);
 router.patch(
   "/me",
   authenticate,
+  verifyActiveUser,
   upload.single("avatar"), // Process multipart file first
   validate({ body: updateProfileSchema }), // Validate req.body with Zod
   updateMe, // Update database
@@ -36,6 +37,7 @@ router.get(
 router.delete(
   "/:id",
   authenticate,
+  verifyActiveUser,
   authorize("ADMIN"),
   validate({ params: deleteUserParamsSchema }),
   deleteUser,

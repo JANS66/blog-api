@@ -17,6 +17,7 @@ router.get("/", validate({ query: getTagsQuerySchema }), getTags);
 router.post(
   "/",
   authenticate,
+  verifyActiveUser,
   authorize("AUTHOR", "ADMIN"),
   validate({ body: createTagSchema }),
   createTag,
@@ -26,6 +27,7 @@ router.post(
 router.delete(
   "/:id",
   authenticate,
+  verifyActiveUser,
   authorize("ADMIN"),
   validate({ params: deleteTagParamsSchema }),
   deleteTag,

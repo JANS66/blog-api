@@ -33,6 +33,7 @@ router.get(
 router.post(
   "/",
   authenticate,
+  verifyActiveUser,
   authorize("AUTHOR", "ADMIN"),
   upload.single("coverImage"), // Multer processes multipart form data and req.file
   validate({ body: createPostSchema }), // Zod validates text body fields
@@ -43,6 +44,7 @@ router.post(
 router.patch(
   "/:id",
   authenticate,
+  verifyActiveUser,
   authorize("AUTHOR", "ADMIN"),
   upload.single("coverImage"),
   validate({ params: updatePostParamsSchema, body: updatePostSchema }),
@@ -53,6 +55,7 @@ router.patch(
 router.delete(
   "/:id",
   authenticate,
+  verifyActiveUser,
   authorize("AUTHOR", "ADMIN"),
   validate({ params: deletePostParamsSchema }),
   deletePost,
