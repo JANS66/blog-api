@@ -8,6 +8,7 @@ import PostDetailPage from "./pages/PostDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute";
 import MainLayout from "./components/MainLayout";
+import CreatePostPage from "./pages/CreatePostPage";
 
 export const router = createBrowserRouter([
   {
@@ -26,11 +27,16 @@ export const router = createBrowserRouter([
           { path: "/login", element: <LoginPage /> },
         ],
       },
+
       // Protected Routes
       {
         element: <ProtectedRoute />,
-        children: [{ path: "/edit-profile", element: <EditProfilePage /> }],
+        children: [
+          { path: "/posts/create", element: <CreatePostPage /> },
+          { path: "/edit-profile", element: <EditProfilePage /> },
+        ],
       },
+
       // Fallback redirect
       { path: "*", element: <Navigate to="/" replace /> },
     ],
