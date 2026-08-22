@@ -116,7 +116,7 @@ export default function PostDetailPage() {
             src={post.coverImage}
             alt={post.title}
             radius="md"
-            maxHeight={400}
+            mah={400}
             fit="cover"
           />
         )}
