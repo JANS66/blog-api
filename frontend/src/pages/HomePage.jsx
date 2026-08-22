@@ -8,6 +8,7 @@ import {
   Image,
   Text,
   Badge,
+  CloseButton,
   Group,
   Avatar,
   TextInput,
@@ -98,7 +99,15 @@ export default function HomePage() {
               <Badge
                 color="blue"
                 variant="filled"
-                onDismiss={() => clearFilter("category")}
+                pr={3}
+                rightSection={
+                  <CloseButton
+                    size={16}
+                    color="white"
+                    variant="transparent"
+                    onClick={() => clearFilter("category")}
+                  />
+                }
               >
                 Category: {category}
               </Badge>
@@ -107,7 +116,15 @@ export default function HomePage() {
               <Badge
                 color="cyan"
                 variant="filled"
-                onDismiss={() => clearFilter("tag")}
+                pr={3}
+                rightSection={
+                  <CloseButton
+                    size={16}
+                    color="white"
+                    variant="transparent"
+                    onClick={() => clearFilter("tag")}
+                  />
+                }
               >
                 Tag: {tag}
               </Badge>
@@ -116,7 +133,15 @@ export default function HomePage() {
               <Badge
                 color="gray"
                 variant="filled"
-                onDismiss={() => clearFilter("search")}
+                pr={3}
+                rightSection={
+                  <CloseButton
+                    size={16}
+                    color="white"
+                    variant="transparent"
+                    onClick={() => clearFilter("search")}
+                  />
+                }
               >
                 Query: "{searchParam}"
               </Badge>
