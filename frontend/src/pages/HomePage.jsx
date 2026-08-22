@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
   Container,
@@ -29,6 +29,7 @@ export default function HomePage() {
   const category = searchParams.get("category") || "";
   const tag = searchParams.get("tag") || "";
   const searchParam = searchParams.get("search") || "";
+  const navigate = useNavigate();
 
   const [searchInput, setSearchInput] = useState(searchParam);
 
@@ -169,11 +170,9 @@ export default function HomePage() {
                     padding="lg"
                     radius="md"
                     withBorder
-                    component={Link}
-                    to={`/posts/${post.slug}`}
+                    onClick={() => navigate(`/posts/${post.slug}`)}
                     style={{
-                      textDecoration: "none",
-                      color: "inherit",
+                      cursor: "pointer",
                       height: "100%",
                       display: "flex",
                       flexDirection: "column",
@@ -196,7 +195,7 @@ export default function HomePage() {
                           color="blue"
                           variant="light"
                           onClick={(e) => {
-                            e.preventDefault();
+                            e.stopPropagation(); // Prevents navigating to post detail
                             updateFilters({
                               category: post.category.slug,
                               page: 1,
@@ -228,7 +227,7 @@ export default function HomePage() {
                             color="gray"
                             variant="outline"
                             onClick={(e) => {
-                              e.preventDefault();
+                              e.stopPropagation(); // Prevents navigating to post detail
                               updateFilters({ tag: t.slug, page: 1 });
                             }}
                           >
@@ -256,10 +255,14 @@ export default function HomePage() {
                         <Text
                           size="xs"
                           fw={500}
-                          component={Link}
-                          to={`/users/${post.author?.username}`}
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ textDecoration: "none", color: "inherit" }}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Stop card click
+                            navigate(`/users/${post.author?.username}`); // Navigate to user profile
+                          }}
+                          style={{
+                            cursor: "pointer",
+                            "&:hover": { textDecoration: "underline" },
+                          }}
                         >
                           {post.author?.username}
                         </Text>
