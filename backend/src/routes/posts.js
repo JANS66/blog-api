@@ -9,6 +9,7 @@ import {
 import {
   authenticate,
   authorize,
+  optionalAuth,
   verifyActiveUser,
 } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
@@ -29,6 +30,7 @@ const router = Router();
 router.get("/", validate({ query: getPostsQuerySchema }), getPosts);
 router.get(
   "/:slug",
+  optionalAuth,
   validate({ params: getPostBySlugParamsSchema }),
   getPostBySlug,
 );

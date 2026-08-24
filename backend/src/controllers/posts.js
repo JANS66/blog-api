@@ -107,22 +107,32 @@ export const getPostBySlug = async (req, res) => {
   try {
     const { slug } = req.valid.params;
 
-    // Check if post exists and is published
+    // Fetch post basic details and author ID
     const existingPost = await prisma.post.findUnique({
       where: { slug },
-      select: { id: true, status: true },
+      select: { id: true, status: true, authorId: true },
     });
 
-    if (!existingPost || existingPost.status !== "PUBLISHED") {
+    if (!existingPost) {
       return res.status(404).json({ error: "Post not found." });
     }
+
+    // Check ownership if post is DRAFT
+    const isOwnerOrAdmin =
+      Boolean(req.user) &&
+      (req.user.id === existingPost.authorId || req.user.role === "ADMIN");
+
+    if (existingPost.status === "DRAFT" && !isOwnerOrAdmin) {
+      return res.status(404).json({ error: "Post not found." });
+    }
+
+    // Increment views ONLY if the post is PUBLISHED
+    const isPublished = existingPost.status === "PUBLISHED";
 
     // Increment view count and fetch full post details in an atomic update
     const post = await prisma.post.update({
       where: { id: existingPost.id },
-      data: {
-        viewsCount: { increment: 1 },
-      },
+      data: isPublished ? { viewsCount: { increment: 1 } } : {},
       select: {
         id: true,
         title: true,
