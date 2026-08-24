@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
   Container,
@@ -26,7 +26,20 @@ export default function UserProfilePage() {
   const { user: currentUser } = useAuth();
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
+  const location = useLocation();
   const limit = 6; // Posts per page
+
+  // Local state for flash message from navigation
+  const [flashMessage, setFlashMessage] = useState(
+    location.state?.message || null,
+  );
+
+  // Clear location.state from browser history so refreshes dont retrigger the alert
+  useEffect(() => {
+    if (location.state?.message) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  });
 
   const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
     queryKey: ["userProfile", username, page],
@@ -76,6 +89,19 @@ export default function UserProfilePage() {
 
   return (
     <Container size="lg" my={40}>
+      {/* Flash / Success Message Banner */}
+      {flashMessage && (
+        <Alert
+          color="teal"
+          title="Success"
+          withCloseButton
+          onClose={() => setFlashMessage(null)}
+          mb="xl"
+        >
+          {flashMessage}
+        </Alert>
+      )}
+
       {/* User Header Info */}
       <Paper p={30} radius="md" withBorder mb="xl">
         <Group justify="space-between" align="flex-start">
