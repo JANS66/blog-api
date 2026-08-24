@@ -22,9 +22,14 @@ export const updateMe = async (formData) => {
   return response.data;
 };
 
-export const getUserByUsername = async (username, page = 1, limit = 10) => {
+export const getUserByUsername = async (
+  username,
+  page = 1,
+  limit = 10,
+  status = "PUBLISHED",
+) => {
   const response = await api.get(`/users/${username}`, {
-    params: { page, limit },
+    params: { page, limit, status },
   });
   return response.data;
 };

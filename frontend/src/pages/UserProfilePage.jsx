@@ -16,6 +16,8 @@ import {
   Skeleton,
   Alert,
   Grid,
+  Tabs,
+  Badge,
 } from "@mantine/core";
 import { getUserByUsername } from "../api/users";
 import { useAuth } from "../context/useAuth";
@@ -25,6 +27,7 @@ export default function UserProfilePage() {
   const { username } = useParams();
   const { user: currentUser } = useAuth();
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState("published");
   const navigate = useNavigate();
   const location = useLocation();
   const limit = 6; // Posts per page
@@ -39,11 +42,24 @@ export default function UserProfilePage() {
     if (location.state?.message) {
       navigate(location.pathname, { replace: true, state: {} });
     }
-  });
+  }, [location, navigate]);
+
+  const isOwnProfile =
+    currentUser?.username?.toLowerCase() === username?.toLowerCase();
+  const isAdmin = currentUser?.role === "ADMIN";
+  const isOwnerOrAdmin = isOwnProfile || isAdmin;
+
+  // Handle tab switches: Change active tab state and reset pagination to page 1
+  const handleTabChange = (newTab) => {
+    if (!newTab) return;
+    setActiveTab(newTab);
+    setPage(1);
+  };
 
   const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
-    queryKey: ["userProfile", username, page],
-    queryFn: () => getUserByUsername(username, page, limit),
+    queryKey: ["userProfile", username, activeTab, page],
+    queryFn: () =>
+      getUserByUsername(username, page, limit, activeTab.toUpperCase()),
     retry: (failureCount, error) => {
       // If the server explicitly said 404, dont waste time retrying
       if (error.response?.status === 404) return false;
@@ -51,13 +67,9 @@ export default function UserProfilePage() {
       // Retry up to 2 times for 500 server errors or connection drops
       return failureCount < 2;
     },
-    refetchOnWindowFocus: false, // Stop refetching when changing tabs
+    refetchOnWindowFocus: false, // Stop refetching when changing browser tabs
     placeholderData: keepPreviousData,
   });
-
-  const isOwnProfile =
-    currentUser?.username?.toLowerCase() === username?.toLowerCase();
-  const isAdmin = currentUser?.role === "ADMIN";
 
   if (isLoading) {
     return (
@@ -85,7 +97,7 @@ export default function UserProfilePage() {
     );
   }
 
-  const { user, posts, pagination } = data;
+  const { user, posts, counts, pagination } = data;
 
   return (
     <Container size="lg" my={40}>
@@ -110,7 +122,9 @@ export default function UserProfilePage() {
               {user?.username?.[0]?.toUpperCase()}
             </Avatar>
             <Stack gap={4}>
-              <Title order={2}>{user?.username}</Title>
+              <Group gap="xs">
+                <Title order={2}>{user?.username}</Title>
+              </Group>
               <Text size="sm" c="dimmed">
                 Joined {new Date(user?.createdAt).toLocaleDateString()}
               </Text>
@@ -122,92 +136,155 @@ export default function UserProfilePage() {
             </Stack>
           </Group>
 
-          {isOwnProfile && (
-            <Button component={Link} to="/edit-profile" variant="outline">
-              Edit Profile
-            </Button>
-          )}
+          <Group>
+            {isOwnProfile && (
+              <Button component={Link} to="/edit-profile" variant="outline">
+                Edit Profile
+              </Button>
+            )}
 
-          {isAdmin && !isOwnProfile && (
-            <DeleteUserButton
-              userId={user.id}
-              username={user.username}
-              onSuccess={() => navigate("/")}
-            />
-          )}
+            {isAdmin && !isOwnProfile && (
+              <DeleteUserButton
+                userId={user.id}
+                username={user.username}
+                onSuccess={() => navigate("/")}
+              />
+            )}
+          </Group>
         </Group>
       </Paper>
 
-      {/* Published Posts Section */}
-      <Title order={3} mb="md">
-        Published Posts ({pagination?.totalPosts || 0})
-      </Title>
+      {/* Main Content / Tabs */}
+      <Tabs value={activeTab} onChange={handleTabChange}>
+        <Tabs.List mb="lg">
+          <Tabs.Tab value="published">
+            Published ({counts?.published || 0})
+          </Tabs.Tab>
 
-      {posts?.length === 0 ? (
-        <Paper p={30} radius="md" withBorder ta="center">
-          <Text c="dimmed">This user hasn't published any posts yet.</Text>
-        </Paper>
-      ) : (
-        <>
-          <Grid mb="xl">
-            {posts.map((post) => (
-              <Grid.Col key={post.id} span={{ base: 12, sm: 6, md: 4 }}>
-                <Card
-                  shadow="sm"
-                  padding="lg"
-                  radius="md"
-                  withBorder
-                  component={Link}
-                  to={`/posts/${post.slug}`}
-                  style={{
-                    textDecoration: "none",
-                    color: "inherit",
-                    height: "100%",
-                  }}
-                >
-                  {post.coverImage && (
-                    <Card.Section mb="sm">
-                      <Image
-                        src={post.coverImage}
-                        height={160}
-                        alt={post.title}
-                      />
-                    </Card.Section>
-                  )}
-
-                  <Text fw={600} size="lg" lineClamp={2} mb="xs">
-                    {post.title}
-                  </Text>
-
-                  {post.excerpt && (
-                    <Text size="sm" c="dimmed" lineClamp={3} mb="md">
-                      {post.excerpt}
-                    </Text>
-                  )}
-
-                  <Group justify="space-between" mt="auto">
-                    <Text size="xs" c="dimmed">
-                      {new Date(post.createdAt).toLocaleDateString()}
-                    </Text>
-                  </Group>
-                </Card>
-              </Grid.Col>
-            ))}
-          </Grid>
-
-          {/* Pagination Controls */}
-          {pagination?.totalPages > 1 && (
-            <Group justify="center" mt="xl">
-              <Pagination
-                total={pagination.totalPages}
-                value={page}
-                onChange={setPage}
-                disabled={isPlaceholderData}
-              />
-            </Group>
+          {isOwnerOrAdmin && (
+            <Tabs.Tab value="draft" color="yellow">
+              Drafts ({counts?.drafts || 0})
+            </Tabs.Tab>
           )}
-        </>
-      )}
+        </Tabs.List>
+
+        {/* Dynamic Panel for Active Tab */}
+        <Tabs.Panel value={activeTab}>
+          {posts?.length === 0 ? (
+            <Paper p={30} radius="md" withBorder ta="center">
+              <Text c="dimmed">
+                {activeTab === "draft"
+                  ? "You have no draft posts."
+                  : "This user hasn't published any posts yet."}
+              </Text>
+            </Paper>
+          ) : (
+            <>
+              <Grid mb="xl">
+                {posts.map((post) => (
+                  <Grid.Col key={post.id} span={{ base: 12, sm: 6, md: 4 }}>
+                    <Card
+                      shadow="sm"
+                      padding="lg"
+                      radius="md"
+                      withBorder
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        borderColor:
+                          post.status === "DRAFT"
+                            ? "var(--mantine-color-yellow-4)"
+                            : undefined,
+                      }}
+                    >
+                      {post.status === "DRAFT" && (
+                        <Group justify="space-between" mb="xs">
+                          <Badge color="yellow" variant="filled">
+                            DRAFT
+                          </Badge>
+                        </Group>
+                      )}
+
+                      {post.coverImage && (
+                        <Card.Section mb="sm">
+                          <Image
+                            src={post.coverImage}
+                            height={160}
+                            alt={post.title}
+                          />
+                        </Card.Section>
+                      )}
+
+                      <Text
+                        fw={600}
+                        size="lg"
+                        lineClamp={2}
+                        mb="xs"
+                        component={Link}
+                        to={
+                          post.status === "DRAFT"
+                            ? `/posts/${post.slug}/edit`
+                            : `/posts/${post.slug}`
+                        }
+                        style={{ textDecoration: "none", color: "inherit" }}
+                      >
+                        {post.title}
+                      </Text>
+
+                      {post.excerpt && (
+                        <Text size="sm" c="dimmed" lineClamp={3} mb="md">
+                          {post.excerpt}
+                        </Text>
+                      )}
+
+                      <Group justify="space-between" mt="auto">
+                        <Text size="xs" c="dimmed">
+                          {new Date(post.createdAt).toLocaleDateString()}
+                        </Text>
+                        <Group gap="xs">
+                          {post.status === "PUBLISHED" ? (
+                            <Button
+                              component={Link}
+                              to={`/posts/${post.slug}`}
+                              variant="light"
+                              size="xs"
+                            >
+                              Read
+                            </Button>
+                          ) : (
+                            <Button
+                              component={Link}
+                              to={`/posts/${post.slug}/edit`}
+                              variant="filled"
+                              color="yellow"
+                              size="xs"
+                            >
+                              Edit Draft
+                            </Button>
+                          )}
+                        </Group>
+                      </Group>
+                    </Card>
+                  </Grid.Col>
+                ))}
+              </Grid>
+
+              {/* Pagination Controls */}
+              {pagination?.totalPages > 1 && (
+                <Group justify="center" mt="xl">
+                  <Pagination
+                    total={pagination.totalPages}
+                    value={page}
+                    onChange={setPage}
+                    disabled={isPlaceholderData}
+                  />
+                </Group>
+              )}
+            </>
+          )}
+        </Tabs.Panel>
+      </Tabs>
     </Container>
   );
 }

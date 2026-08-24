@@ -8,6 +8,7 @@ import {
 import {
   authenticate,
   authorize,
+  optionalAuth,
   verifyActiveUser,
 } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
@@ -32,6 +33,7 @@ router.patch(
 );
 router.get(
   "/:username",
+  optionalAuth,
   validate({
     params: getUserByUsernameParamsSchema,
     query: paginationQuerySchema,

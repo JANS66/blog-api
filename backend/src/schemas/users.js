@@ -45,8 +45,14 @@ export const paginationQuerySchema = z.object({
     .int("Limit must be an integer")
     .positive("Limit must be greater than 0")
     .max(100, "Limit cannot exceed 100")
-    .catch(10)
-    .default(10),
+    .catch(6)
+    .default(6),
+  status: z
+    .enum(["PUBLISHED", "DRAFT"], {
+      invalid_type_error: "Status must be either PUBLISHED or DRAFT",
+    })
+    .catch("PUBLISHED")
+    .default("PUBLISHED"),
 });
 
 export const deleteUserParamsSchema = z.object({

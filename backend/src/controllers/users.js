@@ -127,66 +127,96 @@ export const updateMe = async (req, res) => {
 
 /**
  * GET /api/v1/users/:username
- * Public route to fetch a users public profile and their published posts.
+ * Public route to fetch a user's public profile and their posts by status.
  */
 export const getUserByUsername = async (req, res) => {
   try {
     const { username } = req.valid.params;
-    const { page, limit } = req.valid.query;
+    const { page, limit, status } = req.valid.query;
     const skip = (page - 1) * limit;
 
-    // Run user lookup and published post counting concurrently
-    const [user, totalPosts] = await prisma.$transaction([
-      prisma.user.findUnique({
-        where: { username },
-        select: {
-          id: true,
-          username: true,
-          bio: true,
-          avatarUrl: true,
-          createdAt: true,
-          posts: {
-            where: { status: "PUBLISHED" },
-            select: {
-              id: true,
-              title: true,
-              slug: true,
-              excerpt: true,
-              coverImage: true,
-              createdAt: true,
-            },
-            orderBy: { createdAt: "desc" },
-            skip,
-            take: limit,
-          },
-        },
-      }),
-      prisma.post.count({
-        where: {
-          author: { username },
-          status: "PUBLISHED",
-        },
-      }),
-    ]);
+    // Fetch user first by username (case insensitive)
+    const user = await prisma.user.findFirst({
+      where: { username: { equals: username, mode: "insensitive" } },
+      select: {
+        id: true,
+        username: true,
+        bio: true,
+        avatarUrl: true,
+        role: true,
+        createdAt: true,
+      },
+    });
 
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
 
+    // Check if req.user is the owner of this profile or an admin
+    const isOwnerOrAdmin =
+      Boolean(req.user) &&
+      (req.user.username.toLowerCase() === username.toLowerCase() ||
+        req.user.role === "ADMIN");
+
+    // Prevent unauthorized access to drafts
+    const targetStatus =
+      isOwnerOrAdmin && status === "DRAFT" ? "DRAFT" : "PUBLISHED";
+
+    // Concurrently query posts AND counts
+    const [posts, totalPostsForTab, totalPublished, totalDrafts] =
+      await Promise.all([
+        prisma.post.findMany({
+          where: {
+            authorId: user.id,
+            status: targetStatus,
+          },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            excerpt: true,
+            coverImage: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
+        }),
+        prisma.post.count({
+          where: {
+            authorId: user.id,
+            status: targetStatus,
+          },
+        }),
+        prisma.post.count({
+          where: {
+            authorId: user.id,
+            status: "PUBLISHED",
+          },
+        }),
+        isOwnerOrAdmin
+          ? prisma.post.count({
+              where: {
+                authorId: user.id,
+                status: "DRAFT",
+              },
+            })
+          : Promise.resolve(0),
+      ]);
+
     return res.json({
-      user: {
-        id: user.id,
-        username: user.username,
-        bio: user.bio,
-        avatarUrl: user.avatarUrl,
-        createdAt: user.createdAt,
+      user,
+      posts,
+      counts: {
+        published: totalPublished,
+        drafts: totalDrafts,
       },
-      posts: user.posts,
       pagination: {
-        totalPosts,
-        page,
-        limit,
-        totalPages: Math.ceil(totalPosts / limit),
+        totalPosts: totalPostsForTab,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(totalPostsForTab / limit),
       },
     });
   } catch (err) {

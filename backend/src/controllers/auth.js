@@ -29,7 +29,11 @@ export const register = async (req, res) => {
     });
 
     // Issue Auth
-    const token = generateToken({ userId: user.id, role: user.role });
+    const token = generateToken({
+      userId: user.id,
+      role: user.role,
+      username: user.username,
+    });
     setAuthCookie(res, token);
 
     return res.status(201).json({
@@ -66,7 +70,11 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials." });
     }
 
-    const token = generateToken({ userId: user.id, role: user.role });
+    const token = generateToken({
+      userId: user.id,
+      role: user.role,
+      username: user.username,
+    });
 
     // Set HTTP Only Cookie
     setAuthCookie(res, token);
