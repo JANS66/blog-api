@@ -2,11 +2,7 @@ import { z } from "zod";
 
 // Register Schema
 export const registerSchema = z.object({
-  email: z
-    .string({ required_error: "Email is required" })
-    .email("Invalid email address")
-    .trim()
-    .toLowerCase(),
+  email: z.email("Invalid email address").trim().toLowerCase(),
   username: z
     .string({ required_error: "Username is required" })
     .min(3, "Username must be at least 3 characters")
@@ -24,11 +20,7 @@ export const registerSchema = z.object({
 
 // Login Schema
 export const loginSchema = z.object({
-  email: z
-    .string({ required_error: "Email is required" })
-    .email("Invalid email address format")
-    .trim()
-    .toLowerCase(),
+  email: z.email("Invalid email address format").trim().toLowerCase(),
   password: z
     .string({ required_error: "Password is required" })
     .min(1, "Password cannot be empty"),

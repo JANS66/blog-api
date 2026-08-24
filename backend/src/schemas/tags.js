@@ -14,7 +14,5 @@ export const createTagSchema = z.object({
 });
 
 export const deleteTagParamsSchema = z.object({
-  id: z
-    .string({ required_error: "Tag ID is required" })
-    .uuid("Invalid Tag ID format. Must be a valid UUID"),
+  id: z.uuid("Invalid Tag ID format. Must be a valid UUID"),
 });

@@ -14,15 +14,11 @@ export const createCategorySchema = z.object({
 });
 
 export const deleteCategoryParamsSchema = z.object({
-  id: z
-    .string({ required_error: "Category ID is required" })
-    .uuid("Invalid Category ID format. Must be a valid UUID"),
+  id: z.uuid("Invalid Category ID format. Must be a valid UUID"),
 });
 
 export const updateCategoryParamsSchema = z.object({
-  id: z
-    .string({ required_error: "Category ID is required" })
-    .uuid("Invalid Category ID format. Must be a valid UUID"),
+  id: z.uuid("Invalid Category ID format. Must be a valid UUID"),
 });
 
 export const updateCategorySchema = z.object({

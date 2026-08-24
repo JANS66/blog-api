@@ -1,9 +1,7 @@
 import { z } from "zod";
 
 export const getCommentsParamsSchema = z.object({
-  postId: z
-    .string({ required_error: "Post ID is required" })
-    .uuid("Invalid Post ID format. Must be a valid UUID"),
+  postId: z.uuid("Invalid Post ID format. Must be a valid UUID"),
 });
 
 export const getCommentsQuerySchema = z.object({
@@ -32,7 +30,5 @@ export const createCommentSchema = z.object({
 });
 
 export const deleteCommentParamsSchema = z.object({
-  id: z
-    .string({ required_error: "Comment ID is required" })
-    .uuid("Invalid Comment ID format. Must be a valid UUID"),
+  id: z.uuid("Invalid Comment ID format. Must be a valid UUID"),
 });

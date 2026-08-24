@@ -56,7 +56,5 @@ export const paginationQuerySchema = z.object({
 });
 
 export const deleteUserParamsSchema = z.object({
-  id: z
-    .string({ required_error: "User ID is required" })
-    .uuid("Invalid User ID format. Must be a valid UUID"),
+  id: z.uuid("Invalid User ID format. Must be a valid UUID"),
 });

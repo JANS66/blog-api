@@ -63,9 +63,7 @@ export const createPostSchema = z.object({
 });
 
 export const updatePostParamsSchema = z.object({
-  id: z
-    .string({ required_error: "Post ID is required" })
-    .uuid("Invalid Post ID format. Must be a valid UUID"),
+  id: z.uuid("Invalid Post ID format. Must be a valid UUID"),
 });
 
 export const updatePostSchema = z.object({
@@ -105,7 +103,5 @@ export const updatePostSchema = z.object({
 });
 
 export const deletePostParamsSchema = z.object({
-  id: z
-    .string({ required_error: "Post ID is required" })
-    .uuid("Invalid Post ID format. Must be a valid UUID"),
+  id: z.uuid("Invalid Post ID format. Must be a valid UUID"),
 });
