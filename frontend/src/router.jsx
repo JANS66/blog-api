@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute";
 import MainLayout from "./components/MainLayout";
 import CreatePostPage from "./pages/CreatePostPage";
+import EditPostPage from "./pages/EditPostPage";
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
           { path: "/posts/create", element: <CreatePostPage /> },
+          { path: "/posts/:slug/edit", element: <EditPostPage /> },
           { path: "/edit-profile", element: <EditProfilePage /> },
         ],
       },

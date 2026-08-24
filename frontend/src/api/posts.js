@@ -19,3 +19,12 @@ export const createPost = async (formData) => {
   });
   return response.data;
 };
+
+export const updatePost = async ({ id, formData }) => {
+  const response = await api.patch(`/posts/${id}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
+};

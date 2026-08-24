@@ -1,0 +1,347 @@
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Container,
+  Paper,
+  Title,
+  TextInput,
+  Textarea,
+  Select,
+  TagsInput,
+  FileInput,
+  Button,
+  Group,
+  Stack,
+  Alert,
+  SegmentedControl,
+  Text,
+  Image,
+  Box,
+  Skeleton,
+} from "@mantine/core";
+import { updatePostSchema } from "../schemas/postSchema";
+import { getPostBySlug, updatePost } from "../api/posts";
+import { getCategories } from "../api/categories";
+import { useAuth } from "../context/useAuth";
+
+export default function EditPostPage() {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const [serverError, setServerError] = useState("");
+  const [coverImage, setCoverImage] = useState(null);
+
+  // Fetch Post Details
+  const {
+    data: postData,
+    isLoading: isPostLoading,
+    isError: isPostError,
+    error: postError,
+  } = useQuery({
+    queryKey: ["post", slug],
+    queryFn: () => getPostBySlug(slug),
+  });
+
+  // Fetch Categories
+  const { data: categoriesData } = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+  });
+
+  const post = postData?.post;
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(updatePostSchema),
+    defaultValues: {
+      title: "",
+      content: "",
+      excerpt: "",
+      status: "DRAFT",
+      categoryId: "",
+      tags: [],
+    },
+  });
+
+  // Hydrate form state once post data is loaded
+  useEffect(() => {
+    if (post) {
+      reset({
+        title: post.title || "",
+        content: post.content || "",
+        excerpt: post.excerpt || "",
+        status: post.status || "DRAFT",
+        categoryId: post.categoryId ? String(post.categoryId) : "",
+        tags: post.tags ? post.tags.map((t) => t.name) : [],
+      });
+    }
+  }, [post, reset]);
+
+  // Authorization Check
+  const isOwnerOrAdmin =
+    user && (user.id === post?.authorId || user.role === "ADMIN");
+
+  // Mutation
+  const mutation = useMutation({
+    mutationFn: updatePost,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["post", slug] });
+      navigate(`/posts/${data.post.slug}`);
+    },
+    onError: (err) => {
+      setServerError(err.response?.data?.error || "Failed to update post.");
+    },
+  });
+
+  const onSubmit = (data) => {
+    setServerError("");
+
+    const formData = new FormData();
+
+    if (data.title && data.title !== post.title) {
+      formData.append("title", data.title.trim());
+    }
+
+    if (data.content && data.content !== post.content) {
+      formData.append("content", data.content.trim());
+    }
+
+    if (data.excerpt !== undefined && data.excerpt !== post.excerpt) {
+      formData.append("excerpt", data.excerpt.trim());
+    }
+
+    if (data.status && data.status !== post.status) {
+      formData.append("status", data.status);
+    }
+
+    const currentCatId = post.categoryId ? String(post.categoryId) : "";
+    if (data.categoryId !== currentCatId) {
+      formData.append("categoryId", data.categoryId || "");
+    }
+
+    if (data.tags) {
+      formData.append("tags", JSON.stringify(data.tags));
+    }
+
+    if (coverImage) {
+      formData.append("coverImage", coverImage);
+    }
+
+    // Short circuit check matching backend logic
+    if (
+      !formData.has("title") &&
+      !formData.has("content") &&
+      !formData.has("excerpt") &&
+      !formData.has("status") &&
+      !formData.has("categoryId") &&
+      !formData.has("tags") &&
+      !formData.has("coverImage")
+    ) {
+      setServerError("Please modify at least one field before saving.");
+      return;
+    }
+
+    mutation.mutate({ id: post.id, formData });
+  };
+
+  if (isPostLoading) {
+    return (
+      <Container size="md" my={40}>
+        <Skeleton height={40} mb="lg" />
+        <Skeleton height={50} mb="md" />
+        <Skeleton height={200} mb="md" />
+      </Container>
+    );
+  }
+
+  if (isPostError || !post) {
+    return (
+      <Container size="md" my={40}>
+        <Alert color="red" title="Error">
+          {postError?.response?.data?.error || "Post not found."}
+        </Alert>
+      </Container>
+    );
+  }
+
+  if (!isOwnerOrAdmin) {
+    return (
+      <Container size="md" my={40}>
+        <Alert color="red" title="Access Denied">
+          You are not authorized to edit this post.
+        </Alert>
+      </Container>
+    );
+  }
+
+  const categoriesList = Array.isArray(categoriesData)
+    ? categoriesData
+    : categoriesData?.categories || [];
+
+  const categoryOptions = categoriesList.map((cat) => ({
+    value: String(cat.id),
+    label: cat.name,
+  }));
+
+  return (
+    <Container size="md" my={40}>
+      <Paper radius="md" p="xl" withBorder>
+        <Title order={2} mb="lg">
+          Edit Post
+        </Title>
+
+        {serverError && (
+          <Alert
+            color="red"
+            mb="lg"
+            onClose={() => setServerError("")}
+            withCloseButton
+          >
+            {serverError}
+          </Alert>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Stack gap="md">
+            {/* Status Switcher */}
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <div>
+                  <Text size="sm" fw={500} mb={5}>
+                    Post Status
+                  </Text>
+                  <SegmentedControl
+                    {...field}
+                    data={[
+                      { label: "Draft", value: "DRAFT" },
+                      { label: "Published", value: "PUBLISHED" },
+                    ]}
+                  />
+                </div>
+              )}
+            />
+
+            {/* Title */}
+            <TextInput
+              label="Title"
+              placeholder="Enter post title"
+              required
+              error={errors.title?.message}
+              {...register("title")}
+            />
+
+            {/* Category Select */}
+            <Controller
+              name="categoryId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  label="Category"
+                  placeholder="Select category (optional)"
+                  data={categoryOptions}
+                  error={errors.categoryId?.message}
+                />
+              )}
+            />
+
+            {/* Tags Input */}
+            <Controller
+              name="tags"
+              control={control}
+              render={({ field }) => (
+                <TagsInput
+                  {...field}
+                  label="Tags"
+                  placeholder="Type tag and press Enter"
+                  error={errors.tags?.message}
+                />
+              )}
+            />
+
+            {/* Cover Image */}
+            <FileInput
+              label="Change Cover Image"
+              placeholder="Choose new image file"
+              accept="image/*"
+              value={coverImage}
+              onChange={setCoverImage}
+              clearable
+            />
+
+            {/* Image Preview: show new selection or existing image */}
+            {(coverImage || post.coverImage) && (
+              <Box my="xs">
+                <Text size="xs" c="dimmed" mb={4}>
+                  {coverImage ? "New Cover Preview:" : "Current Cover:"}
+                </Text>
+                <Image
+                  src={
+                    coverImage
+                      ? URL.createObjectURL(coverImage)
+                      : post.coverImage
+                  }
+                  alt="Cover Preview"
+                  mah={200}
+                  radius="md"
+                  fit="cover"
+                />
+              </Box>
+            )}
+
+            {/* Excerpt */}
+            <Textarea
+              label="Excerpt"
+              placeholder="Brief summary of the post (optional)"
+              autosize
+              minRows={3}
+              maxRows={6}
+              maxLength={300}
+              error={errors.excerpt?.message}
+              {...register("excerpt")}
+            />
+
+            {/* Content */}
+            <Textarea
+              label="Content"
+              placeholder="Write your post content here..."
+              required
+              autosize
+              minRows={15}
+              maxRows={30}
+              error={errors.content?.message}
+              {...register("content")}
+            />
+
+            {/* Action Buttons */}
+            <Group justify="end" mt="md">
+              <Button
+                variant="subtle"
+                color="gray"
+                onClick={() => navigate(`/posts/${slug}`)}
+                disabled={mutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" loading={mutation.isPending}>
+                Save Changes
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Paper>
+    </Container>
+  );
+}

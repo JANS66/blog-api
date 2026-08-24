@@ -14,10 +14,13 @@ import {
   Alert,
   Divider,
   Box,
+  Button,
 } from "@mantine/core";
 import { getPostBySlug } from "../api/posts";
+import { useAuth } from "../context/useAuth";
 
 export default function PostDetailPage() {
+  const { user } = useAuth();
   const { slug } = useParams();
 
   const { data, isLoading, isError, error } = useQuery({
@@ -56,6 +59,9 @@ export default function PostDetailPage() {
 
   const { post } = data;
 
+  const isOwnerOrAdmin =
+    user && (user.id === post?.authorId || user.role === "ADMIN");
+
   return (
     <Container size="md" my={40}>
       <Stack gap="lg">
@@ -78,6 +84,18 @@ export default function PostDetailPage() {
           <Text size="xs" c="dimmed">
             {post.viewsCount} {post.viewsCount === 1 ? "view" : "views"}
           </Text>
+
+          {/* Edit Action */}
+          {isOwnerOrAdmin && (
+            <Button
+              component={Link}
+              to={`/posts/${post.slug}/edit`}
+              variant="outline"
+              size="xs"
+            >
+              Edit Post
+            </Button>
+          )}
         </Group>
 
         {/* Title */}
