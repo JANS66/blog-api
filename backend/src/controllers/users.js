@@ -155,21 +155,21 @@ export const getUserByUsername = async (req, res) => {
     // Check if req.user is the owner of this profile or an admin
     const isOwnerOrAdmin =
       Boolean(req.user) &&
-      (req.user.username.toLowerCase() === username.toLowerCase() ||
-        req.user.role === "ADMIN");
+      (req.user.id === user.id || req.user.role === "ADMIN");
 
-    // Prevent unauthorized access to drafts
+    // Handle unauthorized draft requests
+    if (status === "DRAFT" && !isOwnerOrAdmin) {
+      return res.status(403).json({ error: "Unauthorized to view drafts." });
+    }
+
     const targetStatus =
-      isOwnerOrAdmin && status === "DRAFT" ? "DRAFT" : "PUBLISHED";
+      status === "DRAFT" && isOwnerOrAdmin ? "DRAFT" : "PUBLISHED";
 
-    // Concurrently query posts AND counts
-    const [posts, totalPostsForTab, totalPublished, totalDrafts] =
-      await Promise.all([
-        prisma.post.findMany({
-          where: {
-            authorId: user.id,
-            status: targetStatus,
-          },
+    // Use interactive transaction callback
+    const { posts, totalPostsForTab, totalPublished, totalDrafts } =
+      await prisma.$transaction(async (tx) => {
+        const posts = await tx.post.findMany({
+          where: { authorId: user.id, status: targetStatus },
           select: {
             id: true,
             title: true,
@@ -182,28 +182,24 @@ export const getUserByUsername = async (req, res) => {
           orderBy: { createdAt: "desc" },
           skip,
           take: limit,
-        }),
-        prisma.post.count({
-          where: {
-            authorId: user.id,
-            status: targetStatus,
-          },
-        }),
-        prisma.post.count({
-          where: {
-            authorId: user.id,
-            status: "PUBLISHED",
-          },
-        }),
-        isOwnerOrAdmin
-          ? prisma.post.count({
-              where: {
-                authorId: user.id,
-                status: "DRAFT",
-              },
+        });
+
+        const totalPostsForTab = await tx.post.count({
+          where: { authorId: user.id, status: targetStatus },
+        });
+
+        const totalPublished = await tx.post.count({
+          where: { authorId: user.id, status: "PUBLISHED" },
+        });
+
+        const totalDrafts = isOwnerOrAdmin
+          ? await tx.post.count({
+              where: { authorId: user.id, status: "DRAFT" },
             })
-          : Promise.resolve(0),
-      ]);
+          : 0;
+
+        return { posts, totalPostsForTab, totalPublished, totalDrafts };
+      });
 
     return res.json({
       user,
