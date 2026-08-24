@@ -60,7 +60,7 @@ export default function EditPostPage() {
     handleSubmit,
     control,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(updatePostSchema),
     defaultValues: {
@@ -110,6 +110,9 @@ export default function EditPostPage() {
       setServerError(err.response?.data?.error || "Failed to update post.");
     },
   });
+
+  // Disable save if form is untouched and no new image is selected
+  const isSaveDisabled = (!isDirty && !coverImage) || mutation.isPending;
 
   const onSubmit = (data) => {
     setServerError("");
@@ -337,7 +340,7 @@ export default function EditPostPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" loading={mutation.isPending}>
+              <Button type="submit" disabled={isSaveDisabled}>
                 Save Changes
               </Button>
             </Group>
