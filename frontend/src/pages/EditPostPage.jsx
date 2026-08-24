@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -175,13 +175,7 @@ export default function EditPostPage() {
   }
 
   if (!isOwnerOrAdmin) {
-    return (
-      <Container size="md" my={40}>
-        <Alert color="red" title="Access Denied">
-          You are not authorized to edit this post.
-        </Alert>
-      </Container>
-    );
+    return <Navigate to={`/posts/${slug}`} replace />;
   }
 
   const categoriesList = Array.isArray(categoriesData)
