@@ -67,6 +67,18 @@ export default function PostDetailPage() {
       <Stack gap="lg">
         {/* Category and Date */}
         <Group justify="space-between">
+          {/* Edit Action */}
+          {isOwnerOrAdmin && (
+            <Button
+              component={Link}
+              to={`/posts/${post.slug}/edit`}
+              variant="outline"
+              size="xs"
+            >
+              Edit Post
+            </Button>
+          )}
+
           {post.category ? (
             <Badge
               color="blue"
@@ -85,18 +97,6 @@ export default function PostDetailPage() {
             <Badge color="yellow" variant="filled">
               DRAFT (Private)
             </Badge>
-          )}
-
-          {/* Edit Action */}
-          {isOwnerOrAdmin && (
-            <Button
-              component={Link}
-              to={`/posts/${post.slug}/edit`}
-              variant="outline"
-              size="xs"
-            >
-              Edit Post
-            </Button>
           )}
 
           <Text size="xs" c="dimmed">

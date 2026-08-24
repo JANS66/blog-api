@@ -222,11 +222,7 @@ export default function UserProfilePage() {
                         lineClamp={2}
                         mb="xs"
                         component={Link}
-                        to={
-                          post.status === "DRAFT"
-                            ? `/posts/${post.slug}/edit`
-                            : `/posts/${post.slug}`
-                        }
+                        to={`/posts/${post.slug}`}
                         style={{ textDecoration: "none", color: "inherit" }}
                       >
                         {post.title}
