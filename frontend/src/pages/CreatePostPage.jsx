@@ -24,8 +24,10 @@ import {
 import { createPostSchema } from "../schemas/postSchema";
 import { createPost } from "../api/posts";
 import { getCategories } from "../api/categories";
+import { useAuth } from "../context/useAuth";
 
 export default function CreatePostPage() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState("");
   const [coverImage, setCoverImage] = useState(null);
@@ -57,7 +59,15 @@ export default function CreatePostPage() {
   const mutation = useMutation({
     mutationFn: createPost,
     onSuccess: (data) => {
-      navigate(`/posts/${data.post.slug}`);
+      const createdPost = data.post;
+
+      if (createdPost.status === "DRAFT") {
+        navigate(`/users/${user?.username}`, {
+          state: { message: "Draft saved successfully!" },
+        });
+      } else {
+        navigate(`/posts/${createdPost.slug}`);
+      }
     },
     onError: (err) => {
       setServerError(err.response?.data?.error || "Failed to create post.");

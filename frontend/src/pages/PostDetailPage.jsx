@@ -81,9 +81,11 @@ export default function PostDetailPage() {
             <div />
           )}
 
-          <Text size="xs" c="dimmed">
-            {post.viewsCount} {post.viewsCount === 1 ? "view" : "views"}
-          </Text>
+          {post.status === "DRAFT" && (
+            <Badge color="yellow" variant="filled">
+              DRAFT (Private)
+            </Badge>
+          )}
 
           {/* Edit Action */}
           {isOwnerOrAdmin && (
@@ -96,6 +98,10 @@ export default function PostDetailPage() {
               Edit Post
             </Button>
           )}
+
+          <Text size="xs" c="dimmed">
+            {post.viewsCount} {post.viewsCount === 1 ? "view" : "views"}
+          </Text>
         </Group>
 
         {/* Title */}

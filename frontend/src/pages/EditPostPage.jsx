@@ -95,8 +95,16 @@ export default function EditPostPage() {
   const mutation = useMutation({
     mutationFn: updatePost,
     onSuccess: (data) => {
+      const updatedPost = data.post;
       queryClient.invalidateQueries({ queryKey: ["post", slug] });
-      navigate(`/posts/${data.post.slug}`);
+
+      if (updatedPost.status === "DRAFT") {
+        navigate(`/users/${user?.username}`, {
+          state: { message: "Post status set to Draft." },
+        });
+      } else {
+        navigate(`/posts/${updatedPost.slug}`);
+      }
     },
     onError: (err) => {
       setServerError(err.response?.data?.error || "Failed to update post.");
