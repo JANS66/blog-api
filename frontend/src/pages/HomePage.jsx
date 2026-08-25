@@ -24,13 +24,13 @@ import { getPosts } from "../api/posts";
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Read current filter state from URL query parameters (defaults: page 1, limit 9)
   const page = Number(searchParams.get("page")) || 1;
   const category = searchParams.get("category") || "";
   const tag = searchParams.get("tag") || "";
   const searchParam = searchParams.get("search") || "";
-  const navigate = useNavigate();
 
   const [searchInput, setSearchInput] = useState(searchParam);
 

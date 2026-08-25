@@ -54,7 +54,7 @@ export default function LoginPage() {
       <Title ta="center" order={2}>
         Welcome back
       </Title>
-      <Text color="dimmed" size="sm" ta="center" mt={5}>
+      <Text c="dimmed" size="sm" ta="center" mt={5}>
         Don't have an account yet? <Link to="/register">Register</Link>
       </Text>
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing="md">
+          <Stack gap="md">
             <TextInput
               label="Email"
               placeholder="you@example.com"

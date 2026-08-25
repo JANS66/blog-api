@@ -60,14 +60,7 @@ export default function UserProfilePage() {
     queryKey: ["userProfile", username, activeTab, page],
     queryFn: () =>
       getUserByUsername(username, page, limit, activeTab.toUpperCase()),
-    retry: (failureCount, error) => {
-      // If the server explicitly said 404, dont waste time retrying
-      if (error.response?.status === 404) return false;
-
-      // Retry up to 2 times for 500 server errors or connection drops
-      return failureCount < 2;
-    },
-    refetchOnWindowFocus: false, // Stop refetching when changing browser tabs
+    enabled: Boolean(username), // Prevents query execution if username is missing/undefined
     placeholderData: keepPreviousData,
   });
 

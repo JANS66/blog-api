@@ -45,6 +45,7 @@ export default function EditPostPage() {
   } = useQuery({
     queryKey: ["post", slug],
     queryFn: () => getPostBySlug(slug),
+    enabled: Boolean(slug),
   });
 
   // Fetch Categories
@@ -60,7 +61,7 @@ export default function EditPostPage() {
     handleSubmit,
     control,
     reset,
-    formState: { errors, isDirty },
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(updatePostSchema),
     defaultValues: {
@@ -96,7 +97,10 @@ export default function EditPostPage() {
     mutationFn: updatePost,
     onSuccess: (data) => {
       const updatedPost = data.post;
+
+      // Invalidate relevant query caches across the application
       queryClient.invalidateQueries({ queryKey: ["post", slug] });
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
 
       if (updatedPost.status === "DRAFT") {
         navigate(`/users/${user?.username}`, {
@@ -110,9 +114,6 @@ export default function EditPostPage() {
       setServerError(err.response?.data?.error || "Failed to update post.");
     },
   });
-
-  // Disable save if form is untouched and no new image is selected
-  const isSaveDisabled = (!isDirty && !coverImage) || mutation.isPending;
 
   const onSubmit = (data) => {
     setServerError("");
@@ -340,7 +341,7 @@ export default function EditPostPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSaveDisabled}>
+              <Button type="submit" disabled={mutation.isPending}>
                 Save Changes
               </Button>
             </Group>

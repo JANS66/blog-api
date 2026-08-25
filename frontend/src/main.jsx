@@ -7,7 +7,20 @@ import { AuthProvider } from "./context/AuthContext";
 import { router } from "./router";
 import "@mantine/core/styles.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2, // Consider data fresh for 2 minutes globally
+      refetchOnWindowFocus: false, // Stop auto refetching when switching browser tabs
+      retry: (failureCount, error) => {
+        // Dont waste time retrying 404 Not Found errors
+        if (error.response?.status === 404) return false;
+        // Retry up to 2 times for 500 server errors of network drops
+        return failureCount < 2;
+      },
+    },
+  },
+});
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

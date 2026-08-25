@@ -55,7 +55,7 @@ export default function RegisterPage() {
       <Title ta="center" order={2}>
         Create an Account
       </Title>
-      <Text color="dimmed" size="sm" ta="center" mt={5}>
+      <Text c="dimmed" size="sm" ta="center" mt={5}>
         Already have an account? <Link to="/login">Sign in</Link>
       </Text>
 
@@ -67,7 +67,7 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing="md">
+          <Stack gap="md">
             <TextInput
               label="Email"
               placeholder="you@example.com"

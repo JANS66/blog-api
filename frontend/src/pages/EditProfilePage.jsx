@@ -42,8 +42,18 @@ export default function EditProfilePage() {
     mutationFn: updateMe,
     onSuccess: (data) => {
       setSuccessMsg("Profile updated successfully!");
-      // Refresh current user state across AuthContext and React Query cache
+      setAvatarFile(null); // Reset local file upload state
+
+      // Update current authenticated user cache
       queryClient.setQueryData(["currentUser"], { user: data.user });
+
+      // Invalidate profile query to update public view instantly
+      queryClient.invalidateQueries({
+        queryKey: ["userProfile", user?.username],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["currentUser"],
+      });
     },
     onError: (error) => {
       const message =
@@ -101,7 +111,7 @@ export default function EditProfilePage() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing="md">
+          <Stack gap="md">
             <Group justify="center" mb="sm">
               <Avatar
                 src={

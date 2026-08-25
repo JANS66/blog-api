@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Container,
   Paper,
@@ -29,6 +29,8 @@ import { useAuth } from "../context/useAuth";
 export default function CreatePostPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const [serverError, setServerError] = useState("");
   const [coverImage, setCoverImage] = useState(null);
 
@@ -36,7 +38,6 @@ export default function CreatePostPage() {
   const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
     queryFn: getCategories,
-    refetchOnWindowFocus: false, // Disables refetching when changing browser tabs
   });
 
   const {
@@ -60,6 +61,9 @@ export default function CreatePostPage() {
     mutationFn: createPost,
     onSuccess: (data) => {
       const createdPost = data.post;
+
+      // Invalidate global posts query cache
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
 
       if (createdPost.status === "DRAFT") {
         navigate(`/users/${user?.username}`, {

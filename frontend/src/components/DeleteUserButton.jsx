@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { Button, Modal, Text, Group, Alert } from "@mantine/core";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteUser } from "../api/users";
 
 export default function DeleteUserButton({ userId, username, onSuccess }) {
   const [opened, setOpened] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: () => deleteUser(userId),
     onSuccess: () => {
       setOpened(false);
-      onSuccess();
+      queryClient.invalidateQueries({ queryKey: ["userProfile", username] });
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      if (onSuccess) onSuccess();
     },
     onError: (error) => {
       const msg = error.response?.data?.error || "Failed to delete user.";
