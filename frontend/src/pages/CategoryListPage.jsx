@@ -15,13 +15,18 @@ import {
   Card,
   Box,
   Button,
+  Tooltip,
+  ActionIcon,
 } from "@mantine/core";
 import { getCategories } from "../api/categories";
 import { useAuth } from "../context/useAuth";
 import CreateCategoryModal from "../components/CreateCategoryModal";
+import DeleteCategoryModal from "../components/DeleteCategoryModal";
+import { IconTrash } from "@tabler/icons-react";
 
 export default function CategoryListPage() {
   const { user } = useAuth();
+  const [deletingCategory, setDeletingCategory] = useState(null);
   const [modalOpened, setModalOpened] = useState(false);
   const [sortBy, setSortBy] = useState("name");
   const [order, setOrder] = useState("asc");
@@ -77,17 +82,20 @@ export default function CategoryListPage() {
 
   return (
     <Container size="lg" my={40}>
+      {/* Header with Mobile Stack and Desktop Group */}
       <Group justify="space-between" align="center" mb="xl">
         <Title order={2}>Categories</Title>
-        <Group gap="xs">
+
+        <Group gap="xs" w={{ base: "100%", sm: "auto" }}>
           {isAdmin && (
-            <Button onClick={() => setModalOpened(true)}>
+            <Button onClick={() => setModalOpened(true)} size="sm">
               + Create Category
             </Button>
           )}
           <Select
             size="sm"
-            w={{ base: "100%", sm: 220 }} // Full width on mobile, 220px on desktop
+            style={{ flex: 1 }}
+            w={{ base: "100%", sm: 200 }}
             value={`${sortBy}-${order}`}
             onChange={(val) => {
               if (!val) return;
@@ -122,25 +130,62 @@ export default function CategoryListPage() {
               to={`/?category=${category.slug}`}
               style={{ textDecoration: "none", color: "inherit" }}
             >
-              <Group justify="space-between" align="center">
-                <Box>
-                  <Text fw={600} size="lg">
+              {/* Top row inside card */}
+              <Group
+                justify="space-between"
+                align="flex-start"
+                wrap="nowrap"
+                gap="sm"
+              >
+                <Box style={{ overflow: "hidden", minWidth: 0, flex: 1 }}>
+                  <Text fw={600} size="lg" truncate="end">
                     {category.name}
                   </Text>
-                  <Text size="xs" c="dimmed">
+                  <Text size="xs" c="dimmed" truncate="end">
                     /{category.slug}
                   </Text>
                 </Box>
-                <Badge color="blue" variant="light" size="lg">
-                  {category.postCount}{" "}
-                  {category.postCount === 1 ? "post" : "posts"}
-                </Badge>
+
+                {/* Right side actions & badge */}
+                <Group
+                  gap={6}
+                  align="center"
+                  wrap="nowrap"
+                  style={{ flexShrink: 0 }}
+                >
+                  <Badge color="blue" variant="light" size="md">
+                    {category.postCount}{" "}
+                    {category.postCount === 1 ? "post" : "posts"}
+                  </Badge>
+                  {isAdmin && (
+                    <Tooltip label="Delete category">
+                      <ActionIcon
+                        color="red"
+                        variant="subtle"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDeletingCategory(category);
+                        }}
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                </Group>
               </Group>
             </Card>
           ))}
         </SimpleGrid>
       )}
-      {/* Admin Modal */}
+
+      <DeleteCategoryModal
+        category={deletingCategory}
+        opened={!!deletingCategory}
+        onClose={() => setDeletingCategory(null)}
+      />
+
       <CreateCategoryModal
         opened={modalOpened}
         onClose={() => setModalOpened(false)}
