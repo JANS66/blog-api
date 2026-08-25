@@ -14,12 +14,19 @@ import {
   Alert,
   Card,
   Box,
+  Button,
 } from "@mantine/core";
 import { getCategories } from "../api/categories";
+import { useAuth } from "../context/useAuth";
+import CreateCategoryModal from "../components/CreateCategoryModal";
 
 export default function CategoryListPage() {
+  const { user } = useAuth();
+  const [modalOpened, setModalOpened] = useState(false);
   const [sortBy, setSortBy] = useState("name");
   const [order, setOrder] = useState("asc");
+
+  const isAdmin = user?.role === "ADMIN";
 
   // Fetch ALL categories once under a static queryKey
   const { data, isLoading, isError, error } = useQuery({
@@ -72,24 +79,30 @@ export default function CategoryListPage() {
     <Container size="lg" my={40}>
       <Group justify="space-between" align="center" mb="xl">
         <Title order={2}>Categories</Title>
-
-        <Select
-          size="sm"
-          w={{ base: "100%", sm: 220 }} // Full width on mobile, 220px on desktop
-          value={`${sortBy}-${order}`}
-          onChange={(val) => {
-            if (!val) return;
-            const [newSortBy, newOrder] = val.split("-");
-            setSortBy(newSortBy);
-            setOrder(newOrder);
-          }}
-          data={[
-            { label: "Name (A to Z)", value: "name-asc" },
-            { label: "Name (Z to A)", value: "name-desc" },
-            { label: "Most Posts", value: "posts-desc" },
-            { label: "Least Posts", value: "posts-asc" },
-          ]}
-        />
+        <Group gap="xs">
+          {isAdmin && (
+            <Button onClick={() => setModalOpened(true)}>
+              + Create Category
+            </Button>
+          )}
+          <Select
+            size="sm"
+            w={{ base: "100%", sm: 220 }} // Full width on mobile, 220px on desktop
+            value={`${sortBy}-${order}`}
+            onChange={(val) => {
+              if (!val) return;
+              const [newSortBy, newOrder] = val.split("-");
+              setSortBy(newSortBy);
+              setOrder(newOrder);
+            }}
+            data={[
+              { label: "Name (A to Z)", value: "name-asc" },
+              { label: "Name (Z to A)", value: "name-desc" },
+              { label: "Most Posts", value: "posts-desc" },
+              { label: "Least Posts", value: "posts-asc" },
+            ]}
+          />
+        </Group>
       </Group>
 
       {categories.length === 0 ? (
@@ -127,6 +140,11 @@ export default function CategoryListPage() {
           ))}
         </SimpleGrid>
       )}
+      {/* Admin Modal */}
+      <CreateCategoryModal
+        opened={modalOpened}
+        onClose={() => setModalOpened(false)}
+      />
     </Container>
   );
 }
