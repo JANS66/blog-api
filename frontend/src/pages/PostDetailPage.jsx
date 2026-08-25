@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Container,
@@ -18,10 +18,12 @@ import {
 } from "@mantine/core";
 import { getPostBySlug } from "../api/posts";
 import { useAuth } from "../context/useAuth";
+import DeletePostButton from "../components/DeletePostButton";
 
 export default function PostDetailPage() {
   const { user } = useAuth();
   const { slug } = useParams();
+  const navigate = useNavigate();
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["post", slug],
@@ -65,43 +67,67 @@ export default function PostDetailPage() {
   return (
     <Container size="md" my={40}>
       <Stack gap="lg">
-        {/* Category and Date */}
-        <Group justify="space-between">
-          {/* Edit Action */}
-          {isOwnerOrAdmin && (
-            <Button
-              component={Link}
-              to={`/posts/${post.slug}/edit`}
-              variant="outline"
-              size="xs"
-            >
-              Edit Post
-            </Button>
-          )}
+        {/* Top Header Toolbar */}
+        <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+          {/* Left: Category & Status Badges */}
+          <Group gap="xs" align="center">
+            {post.category && (
+              <Badge
+                color="blue"
+                variant="light"
+                size="lg"
+                radius="sm"
+                component={Link}
+                to={`/?category=${post.category.slug}`}
+                style={{ cursor: "pointer" }}
+              >
+                {post.category.name}
+              </Badge>
+            )}
 
-          {post.category ? (
-            <Badge
-              color="blue"
-              variant="light"
-              component={Link}
-              to={`/?category=${post.category.slug}`}
-              style={{ cursor: "pointer" }}
-            >
-              {post.category.name}
-            </Badge>
-          ) : (
-            <div />
-          )}
+            {post.status === "DRAFT" && (
+              <Badge color="yellow" variant="filled" size="lg" radius="sm">
+                DRAFT (Private)
+              </Badge>
+            )}
+          </Group>
 
-          {post.status === "DRAFT" && (
-            <Badge color="yellow" variant="filled">
-              DRAFT (Private)
-            </Badge>
-          )}
+          {/* Right: Metrics & Owner Actions */}
+          <Group gap="md" align="center">
+            <Text size="xs" c="dimmed" fw={500}>
+              {post.viewsCount} {post.viewsCount === 1 ? "view" : "views"}
+            </Text>
 
-          <Text size="xs" c="dimmed">
-            {post.viewsCount} {post.viewsCount === 1 ? "view" : "views"}
-          </Text>
+            {isOwnerOrAdmin && (
+              <Group
+                gap="xs"
+                style={{
+                  borderLeft: "1px solid var(--mantine-color-gray-3)",
+                  paddingLeft: 12,
+                }}
+              >
+                <Button
+                  component={Link}
+                  to={`/posts/${post.slug}/edit`}
+                  variant="subtle"
+                  color="gray"
+                  size="xs"
+                >
+                  Edit
+                </Button>
+
+                <DeletePostButton
+                  postId={post.id}
+                  postTitle={post.title}
+                  onSuccess={() =>
+                    navigate(`/users/${user.username}`, {
+                      state: { message: "Post deleted successfully." },
+                    })
+                  }
+                />
+              </Group>
+            )}
+          </Group>
         </Group>
 
         {/* Title */}

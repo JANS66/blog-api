@@ -28,3 +28,8 @@ export const updatePost = async ({ id, formData }) => {
   });
   return response.data;
 };
+
+export const deletePost = async (id) => {
+  const response = await api.delete(`/posts/${id}`);
+  return response.data;
+};
