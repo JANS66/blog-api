@@ -9,10 +9,11 @@ export const getCategories = async (req, res) => {
   try {
     const { sortBy, order } = req.valid.query;
 
+    const orderBy =
+      sortBy === "posts" ? { posts: { _count: order } } : { [sortBy]: order };
+
     const categories = await prisma.category.findMany({
-      orderBy: {
-        [sortBy]: order,
-      },
+      orderBy,
       select: {
         id: true,
         name: true,

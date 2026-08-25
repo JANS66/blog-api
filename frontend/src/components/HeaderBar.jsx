@@ -1,14 +1,17 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useMediaQuery } from "@mantine/hooks";
 import {
-  Group,
-  Button,
-  Avatar,
-  Menu,
-  Text,
-  UnstyledButton,
-  Container,
   Box,
+  Container,
+  Group,
+  UnstyledButton,
+  Text,
+  Button,
+  Menu,
+  Avatar,
   Divider,
+  ActionIcon,
+  useMantineTheme,
 } from "@mantine/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/useAuth";
@@ -18,6 +21,10 @@ export default function HeaderBar() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const theme = useMantineTheme();
+
+  // Check if screen is smaller than medium breakpoint (768px)
+  const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
 
   const isCreator =
     isAuthenticated && (user?.role === "AUTHOR" || user?.role === "ADMIN");
@@ -49,39 +56,77 @@ export default function HeaderBar() {
           </UnstyledButton>
 
           {/* Right Navigation Options */}
-          <Group gap="md">
+          <Group gap="sm">
+            <Button
+              component={Link}
+              to="/categories"
+              variant="subtle"
+              color="gray"
+              size="sm"
+            >
+              Categories
+            </Button>
+
             {isAuthenticated ? (
               <>
-                {/* Direct CTA for Authors and Admins */}
-                {isCreator && (
-                  <Button
-                    component={Link}
-                    to="/posts/create"
-                    variant="filled"
-                    color="blue"
-                    size="sm"
-                  >
-                    + Write Post
-                  </Button>
-                )}
+                {/* Write Post: Full button on desktop, Icon-only on mobile */}
+                {isCreator &&
+                  (isMobile ? (
+                    <ActionIcon
+                      component={Link}
+                      to="/posts/create"
+                      variant="filled"
+                      color="blue"
+                      size="lg"
+                      radius="md"
+                      title="Write Post"
+                    >
+                      +
+                    </ActionIcon>
+                  ) : (
+                    <Button
+                      component={Link}
+                      to="/posts/create"
+                      variant="filled"
+                      color="blue"
+                      size="sm"
+                    >
+                      + Write Post
+                    </Button>
+                  ))}
 
-                {/* User Avatar Menu */}
+                {/* Profile Avatar Menu */}
                 <Menu shadow="md" width={200} position="bottom-end">
                   <Menu.Target>
                     <UnstyledButton style={{ cursor: "pointer" }}>
                       <Group gap="xs">
-                        <Avatar src={user?.avatarUrl} radius="xl" color="blue">
+                        <Avatar
+                          src={user?.avatarUrl}
+                          radius="xl"
+                          color="blue"
+                          size="sm"
+                        >
                           {user?.username?.[0]?.toUpperCase()}
                         </Avatar>
-                        <Text size="sm" fw={500}>
-                          {user?.username}
-                        </Text>
+                        {/* Hide username text on mobile screens */}
+                        {!isMobile && (
+                          <Text size="sm" fw={500}>
+                            {user?.username}
+                          </Text>
+                        )}
                       </Group>
                     </UnstyledButton>
                   </Menu.Target>
 
                   <Menu.Dropdown>
                     <Menu.Label>Application</Menu.Label>
+
+                    {/* Move Categories into menu on mobile as fallback */}
+                    {isMobile && (
+                      <Menu.Item component={Link} to="/categories">
+                        Categories
+                      </Menu.Item>
+                    )}
 
                     {isCreator && (
                       <Menu.Item component={Link} to="/posts/create">

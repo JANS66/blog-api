@@ -10,6 +10,7 @@ import PublicOnlyRoute from "./components/PublicOnlyRoute";
 import MainLayout from "./components/MainLayout";
 import CreatePostPage from "./pages/CreatePostPage";
 import EditPostPage from "./pages/EditPostPage";
+import CategoryListPage from "./pages/CategoryListPage";
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
     children: [
       // Public / Guest / Logged in shared routes
       { path: "/", element: <HomePage /> },
+      { path: "/categories", element: <CategoryListPage /> },
       { path: "/posts/:slug", element: <PostDetailPage /> },
       { path: "/users/:username", element: <UserProfilePage /> },
 
