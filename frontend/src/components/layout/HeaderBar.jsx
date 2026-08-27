@@ -14,8 +14,8 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "../context/useAuth";
-import { logoutUser } from "../api/auth";
+import { useAuth } from "../../context/useAuth";
+import { logoutUser } from "../../api/auth";
 import { IconChevronDown } from "@tabler/icons-react";
 
 export default function HeaderBar() {

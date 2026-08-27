@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Modal, Text, Group, Alert } from "@mantine/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteUser } from "../api/users";
+import { deleteUser } from "../../api/users";
 
 export default function DeleteUserButton({ userId, username, onSuccess }) {
   const [opened, setOpened] = useState(false);

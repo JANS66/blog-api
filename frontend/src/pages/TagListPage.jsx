@@ -1,6 +1,6 @@
-import TaxonomyListPage from "../components/TaxonomyListPage";
+import TaxonomyListPage from "./TaxonomyListPage";
 import { getTags } from "../api/tags";
-import DeleteTagModal from "../components/DeleteTagModal";
+import DeleteTagModal from "../features/tags/DeleteTagModal";
 
 export default function TagListPage() {
   return (

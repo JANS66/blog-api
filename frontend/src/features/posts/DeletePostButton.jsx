@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Modal, Text, Group, Stack } from "@mantine/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deletePost } from "../api/posts";
+import { deletePost } from "../../api/posts";
 
 export default function DeletePostButton({
   postId,

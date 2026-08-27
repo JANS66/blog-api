@@ -21,7 +21,7 @@ import {
 } from "@mantine/core";
 import { getUserByUsername } from "../api/users";
 import { useAuth } from "../context/useAuth";
-import DeleteUserButton from "../components/DeleteUserButton";
+import DeleteUserButton from "../features/users/DeleteUserButton";
 
 export default function UserProfilePage() {
   const { username } = useParams();

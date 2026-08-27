@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { LoadingOverlay, Box } from "@mantine/core";
-import { useAuth } from "../context/useAuth";
+import { useAuth } from "../../context/useAuth";
 
 export default function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();

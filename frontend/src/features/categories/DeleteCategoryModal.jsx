@@ -1,28 +1,31 @@
 import { useState } from "react";
 import { Modal, Text, Button, Group, Stack, Alert } from "@mantine/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteTag } from "../api/tags";
+import { deleteCategory } from "../../api/categories";
 
-export default function DeleteTagModal({ item, opened, onClose }) {
+export default function DeleteCategoryModal({ item, opened, onClose }) {
   const [serverError, setServerError] = useState("");
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: deleteTag,
+    mutationFn: () => deleteCategory(item.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tags"] });
+      // Refetch the categories list so the UI removes the category
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+
+      // Refetch posts so posts with 'categoryId = null' get fresh data
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
       setServerError("");
       onClose();
     },
     onError: (err) => {
-      setServerError(err.response?.data?.error || "Failed to delete tag.");
+      setServerError(err.response?.data?.error || "Failed to delete category.");
     },
   });
 
   const handleDelete = () => {
-    if (!item) return;
     setServerError("");
-    mutation.mutate(item.id);
+    mutation.mutate();
   };
 
   const handleClose = () => {
@@ -33,20 +36,21 @@ export default function DeleteTagModal({ item, opened, onClose }) {
   if (!item) return null;
 
   return (
-    <Modal opened={opened} onClose={handleClose} title="Delete Tag" centered>
+    <Modal
+      opened={opened}
+      onClose={handleClose}
+      title="Delete Category"
+      centered
+    >
       <Stack gap="md">
         {serverError && (
           <Alert color="red" title="Error">
             {serverError}
           </Alert>
         )}
-
         <Text size="sm">
-          Are you sure you want to delete the tag{" "}
-          <Text span fw={700}>
-            "{item.name}"
-          </Text>
-          ? This action cannot be undone.
+          Are you sure you want to delete category{" "}
+          <strong>"{item.name}"</strong>? This action cannot be undone.
         </Text>
 
         <Group justify="end" mt="md">
@@ -62,7 +66,7 @@ export default function DeleteTagModal({ item, opened, onClose }) {
             onClick={handleDelete}
             loading={mutation.isPending}
           >
-            Delete Tag
+            Delete
           </Button>
         </Group>
       </Stack>

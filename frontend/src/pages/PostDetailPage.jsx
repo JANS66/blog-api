@@ -18,7 +18,7 @@ import {
 } from "@mantine/core";
 import { getPostBySlug } from "../api/posts";
 import { useAuth } from "../context/useAuth";
-import DeletePostButton from "../components/DeletePostButton";
+import DeletePostButton from "../features/posts/DeletePostButton";
 
 export default function PostDetailPage() {
   const { user } = useAuth();

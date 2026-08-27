@@ -1,8 +1,8 @@
-import TaxonomyListPage from "../components/TaxonomyListPage";
+import TaxonomyListPage from "../pages/TaxonomyListPage";
 import { getCategories } from "../api/categories";
-import CreateCategoryModal from "../components/CreateCategoryModal";
-import DeleteCategoryModal from "../components/DeleteCategoryModal";
-import EditCategoryModal from "../components/EditCategoryModal";
+import CreateCategoryModal from "../features/categories/CreateCategoryModal";
+import DeleteCategoryModal from "../features/categories/DeleteCategoryModal";
+import EditCategoryModal from "../features/categories/EditCategoryModal";
 
 export default function CategoryListPage() {
   return (

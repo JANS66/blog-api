@@ -3,7 +3,7 @@ import { Modal, TextInput, Button, Group, Stack, Alert } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { createCategory } from "../api/categories";
+import { createCategory } from "../../api/categories";
 import { zodResolver } from "mantine-form-zod-resolver";
 
 const schema = z.object({

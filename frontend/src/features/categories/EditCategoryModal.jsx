@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal, TextInput, Button, Group, Stack, Alert } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateCategory } from "../api/categories";
+import { updateCategory } from "../../api/categories";
 
 export default function EditCategoryModal({ item, opened, onClose }) {
   const [serverError, setServerError] = useState("");
