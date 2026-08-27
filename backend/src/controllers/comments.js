@@ -28,7 +28,6 @@ export const getCommentsByPost = async (req, res) => {
           content: true,
           parentId: true,
           createdAt: true,
-          updatedAt: true,
           author: {
             select: {
               id: true,
@@ -145,11 +144,9 @@ export const deleteComment = async (req, res) => {
         return res.status(404).json({ error: "Comment not found." });
       }
 
-      return res
-        .status(403)
-        .json({
-          error: "Access denied. You can only delete your own comments.",
-        });
+      return res.status(403).json({
+        error: "Access denied. You can only delete your own comments.",
+      });
     }
 
     return res.json({

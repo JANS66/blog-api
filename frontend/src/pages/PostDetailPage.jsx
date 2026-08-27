@@ -19,6 +19,7 @@ import {
 import { getPostBySlug } from "../api/posts";
 import { useAuth } from "../context/useAuth";
 import DeletePostButton from "../features/posts/DeletePostButton";
+import PostComments from "../features/comments/PostComments";
 
 export default function PostDetailPage() {
   const { user } = useAuth();
@@ -224,6 +225,8 @@ export default function PostDetailPage() {
           </Group>
         )}
       </Stack>
+
+      <PostComments postId={post.id} />
     </Container>
   );
 }
