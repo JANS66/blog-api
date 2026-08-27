@@ -16,6 +16,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/useAuth";
 import { logoutUser } from "../api/auth";
+import { IconChevronDown } from "@tabler/icons-react";
 
 export default function HeaderBar() {
   const { user, isAuthenticated } = useAuth();
@@ -48,28 +49,68 @@ export default function HeaderBar() {
     >
       <Container size="lg" h={60}>
         <Group justify="space-between" h="100%">
-          {/* Logo / Home Link */}
-          <UnstyledButton component={Link} to="/">
-            <Text fw={700} size="lg">
-              BlogApp
-            </Text>
-          </UnstyledButton>
+          {/* Left: Logo & Desktop Links */}
+          <Group gap="md">
+            <UnstyledButton component={Link} to="/">
+              <Text fw={700} size="lg">
+                BlogApp
+              </Text>
+            </UnstyledButton>
+
+            {/* Desktop Only Navigation */}
+            {!isMobile && (
+              <Group gap="xs">
+                <Button
+                  component={Link}
+                  to="/categories"
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                >
+                  Categories
+                </Button>
+                <Button
+                  component={Link}
+                  to="/tags"
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                >
+                  Tags
+                </Button>
+              </Group>
+            )}
+          </Group>
 
           {/* Right Navigation Options */}
           <Group gap="sm">
-            <Button
-              component={Link}
-              to="/categories"
-              variant="subtle"
-              color="gray"
-              size="sm"
-            >
-              Categories
-            </Button>
+            {/* Mobile Only "Explore" Dropdown */}
+            {isMobile && (
+              <Menu shadow="md" width={160} position="bottom-end">
+                <Menu.Target>
+                  <Button
+                    variant="subtle"
+                    color="gray"
+                    size="xs"
+                    rightSection={<IconChevronDown size={14} />}
+                  >
+                    Explore
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item component={Link} to="/categories">
+                    Categories
+                  </Menu.Item>
+                  <Menu.Item component={Link} to="/tags">
+                    Tags
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            )}
 
             {isAuthenticated ? (
               <>
-                {/* Write Post: Full button on desktop, Icon-only on mobile */}
+                {/* Write Post Action */}
                 {isCreator &&
                   (isMobile ? (
                     <ActionIcon
@@ -95,7 +136,7 @@ export default function HeaderBar() {
                     </Button>
                   ))}
 
-                {/* Profile Avatar Menu */}
+                {/* Profile Avatar Menu (Account specific only) */}
                 <Menu shadow="md" width={200} position="bottom-end">
                   <Menu.Target>
                     <UnstyledButton style={{ cursor: "pointer" }}>
@@ -108,7 +149,6 @@ export default function HeaderBar() {
                         >
                           {user?.username?.[0]?.toUpperCase()}
                         </Avatar>
-                        {/* Hide username text on mobile screens */}
                         {!isMobile && (
                           <Text size="sm" fw={500}>
                             {user?.username}
@@ -119,14 +159,7 @@ export default function HeaderBar() {
                   </Menu.Target>
 
                   <Menu.Dropdown>
-                    <Menu.Label>Application</Menu.Label>
-
-                    {/* Move Categories into menu on mobile as fallback */}
-                    {isMobile && (
-                      <Menu.Item component={Link} to="/categories">
-                        Categories
-                      </Menu.Item>
-                    )}
+                    <Menu.Label>Account</Menu.Label>
 
                     {isCreator && (
                       <Menu.Item component={Link} to="/posts/create">
@@ -153,11 +186,16 @@ export default function HeaderBar() {
                 </Menu>
               </>
             ) : (
-              <Group gap="sm">
-                <Button variant="default" component={Link} to="/login">
+              <Group gap="xs">
+                <Button
+                  variant="default"
+                  size="sm"
+                  component={Link}
+                  to="/login"
+                >
                   Log in
                 </Button>
-                <Button component={Link} to="/register">
+                <Button size="sm" component={Link} to="/register">
                   Sign up
                 </Button>
               </Group>

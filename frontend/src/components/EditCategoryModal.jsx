@@ -4,7 +4,7 @@ import { useForm } from "@mantine/form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateCategory } from "../api/categories";
 
-export default function EditCategoryModal({ category, opened, onClose }) {
+export default function EditCategoryModal({ item, opened, onClose }) {
   const [serverError, setServerError] = useState("");
   const queryClient = useQueryClient();
 
@@ -26,11 +26,11 @@ export default function EditCategoryModal({ category, opened, onClose }) {
 
   // Populate form with category data when modal opens
   useEffect(() => {
-    if (category) {
-      form.setValues({ name: category.name });
+    if (item) {
+      form.setValues({ name: item.name });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category?.id]); // Triggers ONLY when a different category is selected
+  }, [item?.id]); // Triggers ONLY when a different category is selected
 
   const mutation = useMutation({
     mutationFn: updateCategory,
@@ -48,7 +48,7 @@ export default function EditCategoryModal({ category, opened, onClose }) {
   const handleSubmit = (values) => {
     setServerError("");
     mutation.mutate({
-      id: category.id,
+      id: item.id,
       name: values.name.trim(),
     });
   };
@@ -59,7 +59,7 @@ export default function EditCategoryModal({ category, opened, onClose }) {
     onClose();
   };
 
-  if (!category) return null;
+  if (!item) return null;
 
   return (
     <Modal opened={opened} onClose={handleClose} title="Edit Category" centered>

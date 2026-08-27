@@ -3,14 +3,18 @@ import { Modal, Text, Button, Group, Stack, Alert } from "@mantine/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteCategory } from "../api/categories";
 
-export default function DeleteCategoryModal({ category, opened, onClose }) {
+export default function DeleteCategoryModal({ item, opened, onClose }) {
   const [serverError, setServerError] = useState("");
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: () => deleteCategory(category.id),
+    mutationFn: () => deleteCategory(item.id),
     onSuccess: () => {
+      // Refetch the categories list so the UI removes the category
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+
+      // Refetch posts so posts with 'categoryId = null' get fresh data
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
       setServerError("");
       onClose();
     },
@@ -29,7 +33,7 @@ export default function DeleteCategoryModal({ category, opened, onClose }) {
     onClose();
   };
 
-  if (!category) return null;
+  if (!item) return null;
 
   return (
     <Modal
@@ -46,7 +50,7 @@ export default function DeleteCategoryModal({ category, opened, onClose }) {
         )}
         <Text size="sm">
           Are you sure you want to delete category{" "}
-          <strong>"{category.name}"</strong>? This action cannot be undone.
+          <strong>"{item.name}"</strong>? This action cannot be undone.
         </Text>
 
         <Group justify="end" mt="md">
