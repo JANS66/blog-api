@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+// Rule for a single tag string
+const tagSchema = z
+  .string()
+  .min(2, "Tag must be at least 2 characters")
+  .max(30, "Tag cannot exceed 30 characters")
+  .trim();
+
 export const createPostSchema = z.object({
   title: z
     .string({ required_error: "Title is required" })
@@ -16,7 +23,8 @@ export const createPostSchema = z.object({
     .optional(),
   status: z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
   categoryId: z.string().optional(),
-  tags: z.array(z.string()).optional().default([]),
+  // Validates every tag inside the array
+  tags: z.array(tagSchema).optional().default([]),
 });
 
 export const updatePostSchema = z.object({
@@ -37,5 +45,5 @@ export const updatePostSchema = z.object({
     .optional(),
   status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
   categoryId: z.string().nullable().optional(),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(tagSchema).optional().default([]),
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createTagSchema } from "./tags.js";
 
 export const getPostsQuerySchema = z.object({
   page: z.coerce
@@ -25,6 +26,9 @@ export const getPostBySlugParamsSchema = z.object({
     .min(1, "Slug cannot be empty")
     .trim(),
 });
+
+// Extract individual tag string schema for reuse
+const tagStringSchema = createTagSchema.shape.name;
 
 export const createPostSchema = z.object({
   title: z
@@ -58,6 +62,7 @@ export const createPostSchema = z.object({
       }),
       z.array(z.string()),
     ])
+    .pipe(z.array(tagStringSchema)) // Validates each tag
     .optional()
     .default([]),
 });
@@ -99,6 +104,7 @@ export const updatePostSchema = z.object({
       }),
       z.array(z.string()),
     ])
+    .pipe(z.array(tagStringSchema)) // Validates each tag
     .optional(),
 });
 

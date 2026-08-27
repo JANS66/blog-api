@@ -124,7 +124,15 @@ export default function PostDetailPage() {
         </Group>
 
         {/* Title */}
-        <Title order={1}>{post.title}</Title>
+        <Title
+          order={1}
+          style={{
+            wordBreak: "break-word",
+            overflowWrap: "anywhere",
+          }}
+        >
+          {post.title}
+        </Title>
 
         {/* Author Details */}
         <Paper p="sm" radius="md" withBorder>
@@ -166,7 +174,16 @@ export default function PostDetailPage() {
 
         {/* Excerpt */}
         {post.excerpt && (
-          <Text size="lg" fs="italic" c="dimmed">
+          <Text
+            size="lg"
+            fs="italic"
+            c="dimmed"
+            style={{
+              whiteSpace: "pre-line",
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+            }}
+          >
             {post.excerpt}
           </Text>
         )}
@@ -176,7 +193,9 @@ export default function PostDetailPage() {
         {/* Main Content Container */}
         <Box
           style={{
-            whiteSpace: "pre-line",
+            whiteSpace: "pre-wrap", // Changed from pre-line to pre-wrap to preserve multiple spaces and line breaks properly
+            wordBreak: "break-word",
+            overflowWrap: "anywhere",
             lineHeight: 1.7,
             fontSize: "1.05rem",
           }}

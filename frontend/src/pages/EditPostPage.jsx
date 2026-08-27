@@ -199,6 +199,13 @@ export default function EditPostPage() {
     label: cat.name,
   }));
 
+  // Extract error message whether its on the array root or an individual item
+  const tagErrorMessage =
+    errors.tags?.message ||
+    (Array.isArray(errors.tags)
+      ? errors.tags.find((err) => err?.message)?.message
+      : undefined);
+
   return (
     <Container size="md" my={40}>
       <Paper radius="md" p="xl" withBorder>
@@ -272,7 +279,7 @@ export default function EditPostPage() {
                   {...field}
                   label="Tags"
                   placeholder="Type tag and press Enter"
-                  error={errors.tags?.message}
+                  error={tagErrorMessage}
                 />
               )}
             />
