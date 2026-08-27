@@ -26,7 +26,11 @@ export const createCommentSchema = z.object({
     .min(1, "Comment cannot be empty")
     .max(1000, "Comment cannot exceed 1000 characters")
     .trim(),
-  parentId: z.string().uuid().optional(),
+  // .nullish() allows both undefined and null, and we can transform empty strings or nulls
+  parentId: z
+    .uuid("Invalid Parent ID format")
+    .nullish()
+    .transform((val) => val || null),
 });
 
 export const deleteCommentParamsSchema = z.object({
