@@ -1,5 +1,6 @@
 import TaxonomyListPage from "../components/TaxonomyListPage";
 import { getTags } from "../api/tags";
+import DeleteTagModal from "../components/DeleteTagModal";
 
 export default function TagListPage() {
   return (
@@ -10,6 +11,7 @@ export default function TagListPage() {
       dataKey="tags"
       paramKey="tag"
       showTagIcon={true}
+      DeleteModal={DeleteTagModal}
     />
   );
 }
