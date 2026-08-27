@@ -22,10 +22,12 @@ import { getCategories } from "../api/categories";
 import { useAuth } from "../context/useAuth";
 import CreateCategoryModal from "../components/CreateCategoryModal";
 import DeleteCategoryModal from "../components/DeleteCategoryModal";
-import { IconTrash } from "@tabler/icons-react";
+import { IconTrash, IconPencil } from "@tabler/icons-react";
+import EditCategoryModal from "../components/EditCategoryModal";
 
 export default function CategoryListPage() {
   const { user } = useAuth();
+  const [editingCategory, setEditingCategory] = useState(null);
   const [deletingCategory, setDeletingCategory] = useState(null);
   const [modalOpened, setModalOpened] = useState(false);
   const [sortBy, setSortBy] = useState("name");
@@ -158,20 +160,37 @@ export default function CategoryListPage() {
                     {category.postCount === 1 ? "post" : "posts"}
                   </Badge>
                   {isAdmin && (
-                    <Tooltip label="Delete category">
-                      <ActionIcon
-                        color="red"
-                        variant="subtle"
-                        size="sm"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setDeletingCategory(category);
-                        }}
-                      >
-                        <IconTrash size={16} />
-                      </ActionIcon>
-                    </Tooltip>
+                    <Group gap={4}>
+                      <Tooltip label="Edit category">
+                        <ActionIcon
+                          variant="subtle"
+                          color="blue"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setEditingCategory(category);
+                          }}
+                        >
+                          <IconPencil size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+
+                      <Tooltip label="Delete category">
+                        <ActionIcon
+                          color="red"
+                          variant="subtle"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDeletingCategory(category);
+                          }}
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
                   )}
                 </Group>
               </Group>
@@ -179,6 +198,12 @@ export default function CategoryListPage() {
           ))}
         </SimpleGrid>
       )}
+
+      <EditCategoryModal
+        category={editingCategory}
+        opened={!!editingCategory}
+        onClose={() => setEditingCategory(null)}
+      />
 
       <DeleteCategoryModal
         category={deletingCategory}
