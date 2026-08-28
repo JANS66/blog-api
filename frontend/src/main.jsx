@@ -6,6 +6,7 @@ import { RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { router } from "./router";
 import "@mantine/core/styles.css";
+import "@mantine/tiptap/styles.css";
 import { ModalsProvider } from "@mantine/modals";
 
 const queryClient = new QueryClient({

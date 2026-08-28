@@ -18,7 +18,10 @@
     "cloudinary": "^2.10.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "depcheck": "^1.4.7",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "isomorphic-dompurify": "^3.23.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "pg": "^8.22.0",
@@ -27,5 +30,8 @@
   },
   "devDependencies": {
     "prisma": "^7.9.1"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
   }
 }

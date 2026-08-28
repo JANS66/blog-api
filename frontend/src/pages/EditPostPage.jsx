@@ -26,6 +26,7 @@ import { updatePostSchema } from "../schemas/postSchema";
 import { getPostBySlug, updatePost } from "../api/posts";
 import { getCategories } from "../api/categories";
 import { useAuth } from "../context/useAuth";
+import { RichEditor } from "../features/posts/RichTextEditor";
 
 export default function EditPostPage() {
   const { slug } = useParams();
@@ -95,7 +96,7 @@ export default function EditPostPage() {
         content: post.content || "",
         excerpt: post.excerpt || "",
         status: post.status || "DRAFT",
-        categoryId: post.categoryId ? String(post.categoryId) : "",
+        categoryId: post.category.id ? String(post.category.id) : "",
         tags: post.tags ? post.tags.map((t) => t.name) : [],
       });
     }
@@ -340,15 +341,18 @@ export default function EditPostPage() {
             />
 
             {/* Content */}
-            <Textarea
-              label="Content"
-              placeholder="Write your post content here..."
-              required
-              autosize
-              minRows={15}
-              maxRows={30}
-              error={errors.content?.message}
-              {...register("content")}
+            <Controller
+              name="content"
+              control={control}
+              render={({ field, fieldState }) => (
+                <RichEditor
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={fieldState.error?.message}
+                  label="Content"
+                  required
+                />
+              )}
             />
 
             {/* Action Buttons */}

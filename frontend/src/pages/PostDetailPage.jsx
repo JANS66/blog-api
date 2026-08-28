@@ -15,6 +15,7 @@ import {
   Divider,
   Box,
   Button,
+  Typography,
 } from "@mantine/core";
 import { getPostBySlug } from "../api/posts";
 import { useAuth } from "../context/useAuth";
@@ -192,17 +193,12 @@ export default function PostDetailPage() {
         <Divider my="sm" />
 
         {/* Main Content Container */}
-        <Box
-          style={{
-            whiteSpace: "pre-wrap", // Changed from pre-line to pre-wrap to preserve multiple spaces and line breaks properly
-            wordBreak: "break-word",
-            overflowWrap: "anywhere",
-            lineHeight: 1.7,
-            fontSize: "1.05rem",
-          }}
-        >
-          {post.content}
-        </Box>
+        <Typography>
+          <Box
+            dangerouslySetInnerHTML={{ __html: post.content }}
+            className="post-content"
+          />
+        </Typography>
 
         {/* Tags */}
         {post.tags?.length > 0 && (

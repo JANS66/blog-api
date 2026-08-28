@@ -5,6 +5,7 @@ import {
   uploadToCloudinary,
   deleteFromCloudinary,
 } from "../utils/cloudinary.js";
+import DOMPurify from "isomorphic-dompurify";
 
 /**
  * GET /api/v1/posts
@@ -190,6 +191,40 @@ export const createPost = async (req, res) => {
       req.valid.body;
     const authorId = req.user.id;
 
+    // Sanitize HTML content BEFORE saving to database
+    const cleanContent = DOMPurify.sanitize(content, {
+      ALLOWED_TAGS: [
+        "p",
+        "b",
+        "i",
+        "em",
+        "strong",
+        "a",
+        "h1",
+        "h2",
+        "h3",
+        "ul",
+        "ol",
+        "li",
+        "blockquote",
+        "code",
+        "pre",
+        "br",
+        "span",
+        "img",
+      ],
+      ALLOWED_ATTR: ["href", "target", "rel", "src", "alt"],
+    });
+
+    // Also sanitize excerpt if provided by user
+    let cleanExcerpt = excerpt ? DOMPurify.sanitize(excerpt) : null;
+
+    // If excerpt is missing, derive it from cleanContent (strip remaining tags for plaintext summary)
+    if (!cleanExcerpt) {
+      const plainTextContent = cleanContent.replace(/<[^>]*>/g, "").trim();
+      cleanExcerpt = plainTextContent.substring(0, 150) + "...";
+    }
+
     // Prepare synchronous data and slug generation FIRST
     const slug = await createUniqueSlug(title);
 
@@ -224,8 +259,8 @@ export const createPost = async (req, res) => {
       data: {
         title,
         slug,
-        content,
-        excerpt: excerpt || content.substring(0, 150) + "...",
+        content: cleanContent,
+        excerpt: cleanExcerpt,
         coverImage: coverImageUrl,
         coverPublicId: coverPublicId,
         status: status || "DRAFT",
@@ -390,14 +425,54 @@ export const updatePost = async (req, res) => {
       publishedAtUpdate = new Date();
     }
 
+    // Handle Content Sanitization and Excerpt
+    let cleanContent;
+    let cleanExcerpt;
+
+    if (content !== undefined) {
+      cleanContent = DOMPurify.sanitize(content, {
+        ALLOWED_TAGS: [
+          "p",
+          "b",
+          "i",
+          "em",
+          "strong",
+          "a",
+          "h1",
+          "h2",
+          "h3",
+          "ul",
+          "ol",
+          "li",
+          "blockquote",
+          "code",
+          "pre",
+          "br",
+          "span",
+          "img",
+        ],
+        ALLOWED_ATTR: ["href", "target", "rel", "src", "alt"],
+      });
+    }
+
+    // Only touch excerpt IF the frontend explicitly sent an excerpt field
+    if (excerpt !== undefined) {
+      const trimmed = excerpt.trim();
+      if (trimmed) {
+        cleanExcerpt = DOMPurify.sanitize(trimmed);
+      } else {
+        cleanExcerpt = ""; // User explicitly cleared the field
+      }
+    }
+
     // Execute Post Update
     const updatedPost = await prisma.post.update({
       where: { id },
       data: {
         ...(title !== undefined && { title }),
         ...(newSlug && { slug: newSlug }),
-        ...(content !== undefined && { content }),
-        ...(excerpt !== undefined && { excerpt }),
+        ...(cleanContent !== undefined && { content: cleanContent }),
+        ...(cleanExcerpt !== undefined && { excerpt: cleanExcerpt }),
         // Save both cover image URL and publicId when a new file was uploaded
         ...(coverImageUrl &&
           coverImagePublicId && {

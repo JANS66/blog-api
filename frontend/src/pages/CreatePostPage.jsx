@@ -25,6 +25,7 @@ import { createPostSchema } from "../schemas/postSchema";
 import { createPost } from "../api/posts";
 import { getCategories } from "../api/categories";
 import { useAuth } from "../context/useAuth";
+import { RichEditor } from "../features/posts/RichTextEditor";
 
 export default function CreatePostPage() {
   const { user } = useAuth();
@@ -238,15 +239,18 @@ export default function CreatePostPage() {
             />
 
             {/* Content */}
-            <Textarea
-              label="Content"
-              placeholder="Write your post content here..."
-              required
-              autosize
-              minRows={15}
-              maxRows={30}
-              error={errors.content?.message}
-              {...register("content")}
+            <Controller
+              name="content"
+              control={control}
+              render={({ field, fieldState }) => (
+                <RichEditor
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={fieldState.error?.message}
+                  label="Content"
+                  required
+                />
+              )}
             />
 
             {/* Action Buttons */}
