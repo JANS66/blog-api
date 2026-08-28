@@ -181,6 +181,9 @@ export default function CreatePostPage() {
                   label="Category"
                   placeholder="Select category (optional)"
                   data={categoryOptions}
+                  searchable
+                  clearable
+                  nothingFoundMessage="No categories found"
                   error={errors.categoryId?.message}
                 />
               )}

@@ -96,7 +96,7 @@ export default function EditPostPage() {
         content: post.content || "",
         excerpt: post.excerpt || "",
         status: post.status || "DRAFT",
-        categoryId: post.category.id ? String(post.category.id) : "",
+        categoryId: post.category?.id ? String(post.category.id) : "",
         tags: post.tags ? post.tags.map((t) => t.name) : [],
       });
     }
@@ -283,6 +283,9 @@ export default function EditPostPage() {
                   label="Category"
                   placeholder="Select category (optional)"
                   data={categoryOptions}
+                  searchable
+                  clearable
+                  nothingFoundMessage="No categories found"
                   error={errors.categoryId?.message}
                 />
               )}

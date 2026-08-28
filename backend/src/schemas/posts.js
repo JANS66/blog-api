@@ -45,7 +45,10 @@ export const createPostSchema = z.object({
     .max(300, "Excerpt cannot exceed 300 characters")
     .optional(),
   status: z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
-  categoryId: z.string().optional(),
+  categoryId: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().nullable().optional(),
+  ),
   // Transform multipart form data string into an array of strings
   tags: z
     .union([
@@ -88,7 +91,10 @@ export const updatePostSchema = z.object({
     .max(300, "Excerpt cannot exceed 300 characters")
     .optional(),
   status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
-  categoryId: z.string().nullable().optional(),
+  categoryId: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().nullable().optional(),
+  ),
   tags: z
     .union([
       z.string().transform((val) => {

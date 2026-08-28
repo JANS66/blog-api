@@ -22,7 +22,7 @@ export const createPostSchema = z.object({
     .max(300, "Excerpt cannot exceed 300 characters")
     .optional(),
   status: z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
-  categoryId: z.string().optional(),
+  categoryId: z.string().nullable().optional(),
   // Validates every tag inside the array
   tags: z.array(tagSchema).optional().default([]),
 });
