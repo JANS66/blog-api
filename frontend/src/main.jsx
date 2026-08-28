@@ -6,6 +6,7 @@ import { RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { router } from "./router";
 import "@mantine/core/styles.css";
+import { ModalsProvider } from "@mantine/modals";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,9 +27,11 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <MantineProvider>
-        <AuthProvider>
-          <RouterProvider router={router} />
-        </AuthProvider>
+        <ModalsProvider>
+          <AuthProvider>
+            <RouterProvider router={router} />
+          </AuthProvider>
+        </ModalsProvider>
       </MantineProvider>
     </QueryClientProvider>
   </StrictMode>,

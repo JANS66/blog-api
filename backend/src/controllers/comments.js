@@ -125,7 +125,7 @@ export const deleteComment = async (req, res) => {
     // Construct authorization query clause
     const where = {
       id,
-      ...createComment(!isAdmin && { authorId: userId }),
+      ...(!isAdmin && { authorId: userId }),
     };
 
     // Atomic delete: deletes if found AND authorized in 1 DB hit

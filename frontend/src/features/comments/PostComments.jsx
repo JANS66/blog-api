@@ -12,21 +12,26 @@ import {
   Badge,
   Button,
   Box,
+  Tooltip,
+  ActionIcon,
 } from "@mantine/core";
 import {
   IconAlertCircle,
   IconMessageCircle,
   IconCornerDownRight,
+  IconTrash,
 } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
-import { getCommentsByPost } from "../../api/comments";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getCommentsByPost, deleteComment } from "../../api/comments";
 import { useAuth } from "../../context/useAuth";
 import CreateCommentForm from "./CreateCommentForm";
+import { modals } from "@mantine/modals";
 
 export default function PostComments({ postId }) {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [activeReplyId, setActiveReplyId] = useState(null);
+  const queryClient = useQueryClient();
   const limit = 20;
 
   const { data, isLoading, isError, error } = useQuery({
@@ -37,6 +42,28 @@ export default function PostComments({ postId }) {
 
   const comments = data?.comments || [];
   const pagination = data?.pagination || { totalPages: 1, totalComments: 0 };
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: (commentId) => deleteComment(commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+    },
+  });
+
+  const openDeleteModal = (commentId) =>
+    modals.openConfirmModal({
+      title: "Delete comment",
+      children: (
+        <Text size="sm">
+          Are you sure you want to delete this comment? This action cannnot be
+          undone.
+        </Text>
+      ),
+      labels: { confirm: "Delete", cancel: "Cancel" },
+      confirmProps: { color: "red" },
+      onConfirm: () => deleteMutation.mutate(commentId),
+    });
 
   // Helper function to build a nested tree from a flat comment list
   const buildCommentTree = (flatComments) => {
@@ -65,6 +92,9 @@ export default function PostComments({ postId }) {
 
   // Reusable comment renderer component for recursive nesting support
   const CommentItem = ({ comment, isReply = false }) => {
+    const canDelete =
+      user && (user.id === comment.author?.id || user.role === "ADMIN");
+
     return (
       <Paper
         p="md"
@@ -92,9 +122,24 @@ export default function PostComments({ postId }) {
 
           <Stack gap={4} style={{ flex: 1 }}>
             <Group justify="space-between" align="center">
-              <Text fw={600} size="sm">
-                {comment.author?.username || "Anonymous"}
-              </Text>
+              <Group gap="xs">
+                <Text fw={600} size="sm">
+                  {comment.author?.username || "Anonymous"}
+                </Text>
+                {canDelete && (
+                  <Tooltip label="Delete comment">
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      size="xs"
+                      onClick={() => openDeleteModal(comment.id)}
+                      loading={deleteMutation.isPending}
+                    >
+                      <IconTrash size={14} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+              </Group>
               <Text size="xs" c="dimmed">
                 {new Date(comment.createdAt).toLocaleDateString(undefined, {
                   year: "numeric",
