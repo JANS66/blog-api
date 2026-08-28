@@ -203,6 +203,11 @@ export default function PostDetailPage() {
           <Box
             dangerouslySetInnerHTML={{ __html: post.content }}
             className="post-content"
+            style={{
+              whiteSpace: "pre-line",
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+            }}
           />
         </Typography>
 
