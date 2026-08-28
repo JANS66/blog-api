@@ -167,7 +167,11 @@ export default function EditPostPage() {
       formData.append("categoryId", data.categoryId || "");
     }
 
-    if (data.tags) {
+    // Only append tags if they differ from the original post tags
+    const originalTags = post.tags ? post.tags.map((t) => t.name).sort() : [];
+    const currentTags = Array.isArray(data.tags) ? [...data.tags].sort() : [];
+
+    if (JSON.stringify(originalTags) !== JSON.stringify(currentTags)) {
       formData.append("tags", JSON.stringify(data.tags));
     }
 
