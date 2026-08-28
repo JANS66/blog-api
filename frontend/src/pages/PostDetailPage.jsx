@@ -57,8 +57,7 @@ export default function PostDetailPage() {
   const { post } = data;
 
   const isOwnerOrAdmin =
-    user && (user.id === post?.author.id || user.role === "ADMIN");
-
+    user && (user.id === post?.author?.id || user.role === "ADMIN");
   return (
     <Container size="md" my={40}>
       <Stack gap="lg">
@@ -144,15 +143,22 @@ export default function PostDetailPage() {
                 {post.author?.username?.[0]?.toUpperCase()}
               </Avatar>
               <div>
-                <Text
-                  fw={600}
-                  size="sm"
-                  component={Link}
-                  to={`/users/${post.author?.username}`}
-                  style={{ textDecoration: "none", color: "inherit" }}
-                >
-                  {post.author?.username}
-                </Text>
+                {post.author ? (
+                  <Text
+                    fw={600}
+                    size="sm"
+                    component={Link}
+                    to={`/users/${post.author.username}`}
+                    style={{ textDecoration: "none", color: "inherit" }}
+                  >
+                    {post.author.username}
+                  </Text>
+                ) : (
+                  <Text fw={600} size="sm" c="dimmed">
+                    Deleted User
+                  </Text>
+                )}
+
                 {post.author?.bio && (
                   <Text size="xs" c="dimmed" lineClamp={1}>
                     {post.author.bio}
