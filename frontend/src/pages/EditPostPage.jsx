@@ -54,8 +54,7 @@ export default function EditPostPage() {
     queryFn: getCategories,
   });
 
-  const post = postData?.post;
-
+  // Form Setup
   const {
     register,
     handleSubmit,
@@ -74,6 +73,9 @@ export default function EditPostPage() {
     },
   });
 
+  // Extract post object
+  const post = postData?.post;
+
   // Hydrate form state once post data is loaded
   useEffect(() => {
     if (post) {
@@ -87,10 +89,6 @@ export default function EditPostPage() {
       });
     }
   }, [post, reset]);
-
-  // Authorization Check
-  const isOwnerOrAdmin =
-    user && (user.id === post?.authorId || user.role === "ADMIN");
 
   // Mutation
   const mutation = useMutation({
@@ -114,6 +112,34 @@ export default function EditPostPage() {
       setServerError(err.response?.data?.error || "Failed to update post.");
     },
   });
+
+  if (isPostLoading) {
+    return (
+      <Container size="md" my={40}>
+        <Skeleton height={40} mb="lg" />
+        <Skeleton height={50} mb="md" />
+        <Skeleton height={200} mb="md" />
+      </Container>
+    );
+  }
+
+  // Handle fetch errors or missing post data SECOND.
+  if (isPostError || !post) {
+    return (
+      <Container size="md" my={40}>
+        <Alert color="red" title="Error">
+          {postError?.response?.data?.error || "Post not found."}
+        </Alert>
+      </Container>
+    );
+  }
+  // Authorization Check
+  const isOwnerOrAdmin =
+    user && (user.id === post?.author.id || user.role === "ADMIN");
+
+  if (!isOwnerOrAdmin) {
+    return <Navigate to={`/posts/${slug}`} replace />;
+  }
 
   const onSubmit = (data) => {
     setServerError("");
@@ -165,30 +191,6 @@ export default function EditPostPage() {
 
     mutation.mutate({ id: post.id, formData });
   };
-
-  if (isPostLoading) {
-    return (
-      <Container size="md" my={40}>
-        <Skeleton height={40} mb="lg" />
-        <Skeleton height={50} mb="md" />
-        <Skeleton height={200} mb="md" />
-      </Container>
-    );
-  }
-
-  if (isPostError || !post) {
-    return (
-      <Container size="md" my={40}>
-        <Alert color="red" title="Error">
-          {postError?.response?.data?.error || "Post not found."}
-        </Alert>
-      </Container>
-    );
-  }
-
-  if (!isOwnerOrAdmin) {
-    return <Navigate to={`/posts/${slug}`} replace />;
-  }
 
   const categoriesList = Array.isArray(categoriesData)
     ? categoriesData

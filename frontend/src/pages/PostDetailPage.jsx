@@ -56,7 +56,7 @@ export default function PostDetailPage() {
   const { post } = data;
 
   const isOwnerOrAdmin =
-    user && (user.id === post?.authorId || user.role === "ADMIN");
+    user && (user.id === post?.author.id || user.role === "ADMIN");
 
   return (
     <Container size="md" my={40}>
