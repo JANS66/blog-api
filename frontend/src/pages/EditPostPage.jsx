@@ -36,6 +36,17 @@ export default function EditPostPage() {
   const [serverError, setServerError] = useState("");
   const [coverImage, setCoverImage] = useState(null);
 
+  // Generate URL for rendering, and clean up previous URLs when coverImage changes
+  const previewUrl = coverImage ? URL.createObjectURL(coverImage) : null;
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   // Fetch Post Details
   const {
     data: postData,
@@ -301,17 +312,13 @@ export default function EditPostPage() {
             />
 
             {/* Image Preview: show new selection or existing image */}
-            {(coverImage || post.coverImage) && (
+            {(previewUrl || post.coverImage) && (
               <Box my="xs">
                 <Text size="xs" c="dimmed" mb={4}>
-                  {coverImage ? "New Cover Preview:" : "Current Cover:"}
+                  {previewUrl ? "New Cover Preview:" : "Current Cover:"}
                 </Text>
                 <Image
-                  src={
-                    coverImage
-                      ? URL.createObjectURL(coverImage)
-                      : post.coverImage
-                  }
+                  src={previewUrl || post.coverImage}
                   alt="Cover Preview"
                   mah={200}
                   radius="md"
