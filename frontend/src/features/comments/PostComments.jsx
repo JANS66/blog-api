@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Stack,
   Group,
@@ -111,21 +112,42 @@ export default function PostComments({ postId }) {
         }
       >
         <Group align="flex-start" wrap="nowrap">
-          <Avatar
-            src={comment.author?.avatarUrl}
-            alt={comment.author?.username}
-            radius="xl"
-            color="blue"
-          >
-            {comment.author?.username?.slice(0, 2).toUpperCase()}
-          </Avatar>
+          {comment.author?.id && (
+            <Link
+              to={`/users/${comment.author.username}`}
+              style={{ textDecoration: "none", display: "inline-block" }}
+            >
+              <Avatar
+                src={comment.author?.avatarUrl}
+                alt={comment.author?.username}
+                radius="xl"
+                color="blue"
+                style={{ cursor: "pointer" }}
+              >
+                {comment.author?.username?.slice(0, 2).toUpperCase()}
+              </Avatar>
+            </Link>
+          )}
 
           <Stack gap={4} style={{ flex: 1 }}>
             <Group justify="space-between" align="center">
               <Group gap="xs">
-                <Text fw={600} size="sm">
-                  {comment.author?.username || "Anonymous"}
-                </Text>
+                {comment.author?.id && (
+                  <Text
+                    component={Link}
+                    to={`/users/${comment.author.username}`}
+                    fw={600}
+                    size="sm"
+                    c="var(--mantine-color-text)"
+                    style={{
+                      cursor: "pointer",
+                      textDecoration: "none",
+                    }}
+                    className="hover-underline"
+                  >
+                    {comment.author?.username || "Anonymous"}
+                  </Text>
+                )}
                 {canDelete && (
                   <Tooltip label="Delete comment">
                     <ActionIcon
