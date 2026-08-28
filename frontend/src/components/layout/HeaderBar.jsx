@@ -35,9 +35,7 @@ export default function HeaderBar() {
     onSuccess: async () => {
       // Explicitly clear the user entry so AuthProvider instantly sees user = null
       queryClient.setQueryData(["currentUser"], { user: null });
-
       queryClient.clear();
-
       navigate("/login");
     },
   });
@@ -47,10 +45,11 @@ export default function HeaderBar() {
       bg="var(--mantine-color-body)"
       style={{ borderBottom: "1px solid var(--mantine-color-gray-3)" }}
     >
-      <Container size="lg" h={60}>
-        <Group justify="space-between" h="100%">
+      {/* Px for mobile padding and wrap protection */}
+      <Container size="lg" h={60} px={{ base: "xs", sm: "md" }}>
+        <Group justify="space-between" h="100%" wrap="nowrap">
           {/* Left: Logo & Desktop Links */}
-          <Group gap="md">
+          <Group gap="xs" wrap="nowrap">
             <UnstyledButton component={Link} to="/">
               <Text fw={700} size="lg">
                 BlogApp
@@ -83,7 +82,7 @@ export default function HeaderBar() {
           </Group>
 
           {/* Right Navigation Options */}
-          <Group gap="sm">
+          <Group gap={isMobile ? 6 : "sm"} wrap="nowrap">
             {/* Mobile Only "Explore" Dropdown */}
             {isMobile && (
               <Menu shadow="md" width={160} position="bottom-end">
@@ -93,6 +92,7 @@ export default function HeaderBar() {
                     color="gray"
                     size="xs"
                     rightSection={<IconChevronDown size={14} />}
+                    px={6}
                   >
                     Explore
                   </Button>
@@ -160,22 +160,18 @@ export default function HeaderBar() {
 
                   <Menu.Dropdown>
                     <Menu.Label>Account</Menu.Label>
-
                     {isCreator && (
                       <Menu.Item component={Link} to="/posts/create">
                         Create Post
                       </Menu.Item>
                     )}
-
                     <Menu.Item component={Link} to={`/users/${user?.username}`}>
                       My Profile
                     </Menu.Item>
                     <Menu.Item component={Link} to="/edit-profile">
                       Edit Profile
                     </Menu.Item>
-
                     <Divider my="xs" />
-
                     <Menu.Item
                       color="red"
                       onClick={() => logoutMutation.mutate()}
@@ -186,16 +182,23 @@ export default function HeaderBar() {
                 </Menu>
               </>
             ) : (
-              <Group gap="xs">
+              /* Button sizes 'xs' on mobile so they dont break boundaries */
+              <Group gap={6} wrap="nowrap">
                 <Button
                   variant="default"
-                  size="sm"
+                  size={isMobile ? "xs" : "sm"}
                   component={Link}
                   to="/login"
+                  px={isMobile ? 8 : undefined}
                 >
                   Log in
                 </Button>
-                <Button size="sm" component={Link} to="/register">
+                <Button
+                  size={isMobile ? "xs" : "sm"}
+                  component={Link}
+                  to="/register"
+                  px={isMobile ? 8 : undefined}
+                >
                   Sign up
                 </Button>
               </Group>
