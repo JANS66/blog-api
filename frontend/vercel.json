@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": ""
+      "destination": "https://blog-api-id2s.onrender.com"
     }
   ]
 }
