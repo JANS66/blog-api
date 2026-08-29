@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api/:match*",
-      "destination": "https://blog-api-id2s.onrender.com"
+      "source": "/api/:path*",
+      "destination": "https://blog-api-id2s.onrender.com/api/:path*"
     }
   ]
 }
